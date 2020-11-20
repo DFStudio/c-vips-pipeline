@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="c-vips-pipeline"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="clang"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="c-vips-pipeline">
+				<Option output="/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/c-vips-pipeline" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="clang"/>
+				<Compiler>
+					<Add directory="/usr/local/Cellar/libffi/3.3/include"/>
+					<Add directory="/usr/local/Cellar/vips/8.10.2/include"/>
+					<Add directory="/usr/local/Cellar/glib/2.66.1/include"/>
+					<Add directory="/usr/local/Cellar/libgsf/1.14.47/include/libgsf-1"/>
+					<Add directory="/usr/local/Cellar/fftw/3.3.8_2/include"/>
+					<Add directory="/usr/local/Cellar/imagemagick/7.0.10-34/include/ImageMagick-7"/>
+					<Add directory="/usr/local/Cellar/orc/0.4.32/include/orc-0.4"/>
+					<Add directory="/usr/local/Cellar/little-cms2/2.11/include"/>
+					<Add directory="/usr/local/Cellar/openexr/2.5.3/include/OpenEXR"/>
+					<Add directory="/usr/local/Cellar/ilmbase/2.5.3/include"/>
+					<Add directory="/usr/local/Cellar/ilmbase/2.5.3/include/OpenEXR"/>
+					<Add directory="/usr/local/Cellar/libheif/1.9.1/include"/>
+					<Add directory="/usr/local/Cellar/poppler/20.10.0/include/poppler/glib"/>
+					<Add directory="/usr/local/Cellar/poppler/20.10.0/include/poppler"/>
+					<Add directory="/usr/local/Cellar/librsvg/2.50.1/include/librsvg-2.0"/>
+					<Add directory="/usr/local/Cellar/gdk-pixbuf/2.40.0_1/include/gdk-pixbuf-2.0"/>
+					<Add directory="/usr/local/Cellar/openslide/3.4.1_5/include/openslide"/>
+					<Add directory="/usr/local/Cellar/libmatio/1.5.17_2/include"/>
+					<Add directory="/usr/local/opt/hdf5/include"/>
+					<Add directory="/usr/local/Cellar/cfitsio/3.490/include"/>
+					<Add directory="/usr/local/Cellar/webp/1.1.0/include"/>
+					<Add directory="/usr/local/Cellar/pango/1.46.2/include/pango-1.0"/>
+					<Add directory="/usr/local/Cellar/fribidi/1.0.10/include/fribidi"/>
+					<Add directory="/usr/local/Cellar/cairo/1.16.0_3/include/cairo"/>
+					<Add directory="/usr/local/Cellar/pixman/0.40.0/include/pixman-1"/>
+					<Add directory="/usr/local/Cellar/harfbuzz/2.7.2/include/harfbuzz"/>
+					<Add directory="/usr/local/Cellar/graphite2/1.3.14/include"/>
+					<Add directory="/usr/local/Cellar/fontconfig/2.13.1/include"/>
+					<Add directory="/usr/local/opt/freetype/include/freetype2"/>
+					<Add directory="/usr/local/Cellar/libtiff/4.1.0/include"/>
+					<Add directory="/usr/local/Cellar/libspng/0.6.1/include"/>
+					<Add directory="/usr/local/Cellar/libpng/1.6.37/include/libpng16"/>
+					<Add directory="/usr/local/Cellar/libimagequant/2.12.6/include"/>
+					<Add directory="/usr/local/Cellar/jpeg/9d/include"/>
+					<Add directory="/usr/local/Cellar/libexif/0.6.22/include"/>
+					<Add directory="/usr/local/Cellar/glib/2.66.1/include/glib-2.0"/>
+					<Add directory="/usr/local/Cellar/glib/2.66.1/lib/glib-2.0/include"/>
+					<Add directory="/usr/local/opt/gettext/include"/>
+					<Add directory="/usr/local/Cellar/pcre/8.44/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/bin/../include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/11.0.3/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+					<Add directory="/usr/local/Cellar/llvm/11.0.0/lib/clang/11.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/System/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 c-vips-pipeline"/>
+					<CompileFile command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="c-vips-pipeline/fast">
+				<Option output="/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/c-vips-pipeline" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="clang"/>
+				<Compiler>
+					<Add directory="/usr/local/Cellar/libffi/3.3/include"/>
+					<Add directory="/usr/local/Cellar/vips/8.10.2/include"/>
+					<Add directory="/usr/local/Cellar/glib/2.66.1/include"/>
+					<Add directory="/usr/local/Cellar/libgsf/1.14.47/include/libgsf-1"/>
+					<Add directory="/usr/local/Cellar/fftw/3.3.8_2/include"/>
+					<Add directory="/usr/local/Cellar/imagemagick/7.0.10-34/include/ImageMagick-7"/>
+					<Add directory="/usr/local/Cellar/orc/0.4.32/include/orc-0.4"/>
+					<Add directory="/usr/local/Cellar/little-cms2/2.11/include"/>
+					<Add directory="/usr/local/Cellar/openexr/2.5.3/include/OpenEXR"/>
+					<Add directory="/usr/local/Cellar/ilmbase/2.5.3/include"/>
+					<Add directory="/usr/local/Cellar/ilmbase/2.5.3/include/OpenEXR"/>
+					<Add directory="/usr/local/Cellar/libheif/1.9.1/include"/>
+					<Add directory="/usr/local/Cellar/poppler/20.10.0/include/poppler/glib"/>
+					<Add directory="/usr/local/Cellar/poppler/20.10.0/include/poppler"/>
+					<Add directory="/usr/local/Cellar/librsvg/2.50.1/include/librsvg-2.0"/>
+					<Add directory="/usr/local/Cellar/gdk-pixbuf/2.40.0_1/include/gdk-pixbuf-2.0"/>
+					<Add directory="/usr/local/Cellar/openslide/3.4.1_5/include/openslide"/>
+					<Add directory="/usr/local/Cellar/libmatio/1.5.17_2/include"/>
+					<Add directory="/usr/local/opt/hdf5/include"/>
+					<Add directory="/usr/local/Cellar/cfitsio/3.490/include"/>
+					<Add directory="/usr/local/Cellar/webp/1.1.0/include"/>
+					<Add directory="/usr/local/Cellar/pango/1.46.2/include/pango-1.0"/>
+					<Add directory="/usr/local/Cellar/fribidi/1.0.10/include/fribidi"/>
+					<Add directory="/usr/local/Cellar/cairo/1.16.0_3/include/cairo"/>
+					<Add directory="/usr/local/Cellar/pixman/0.40.0/include/pixman-1"/>
+					<Add directory="/usr/local/Cellar/harfbuzz/2.7.2/include/harfbuzz"/>
+					<Add directory="/usr/local/Cellar/graphite2/1.3.14/include"/>
+					<Add directory="/usr/local/Cellar/fontconfig/2.13.1/include"/>
+					<Add directory="/usr/local/opt/freetype/include/freetype2"/>
+					<Add directory="/usr/local/Cellar/libtiff/4.1.0/include"/>
+					<Add directory="/usr/local/Cellar/libspng/0.6.1/include"/>
+					<Add directory="/usr/local/Cellar/libpng/1.6.37/include/libpng16"/>
+					<Add directory="/usr/local/Cellar/libimagequant/2.12.6/include"/>
+					<Add directory="/usr/local/Cellar/jpeg/9d/include"/>
+					<Add directory="/usr/local/Cellar/libexif/0.6.22/include"/>
+					<Add directory="/usr/local/Cellar/glib/2.66.1/include/glib-2.0"/>
+					<Add directory="/usr/local/Cellar/glib/2.66.1/lib/glib-2.0/include"/>
+					<Add directory="/usr/local/opt/gettext/include"/>
+					<Add directory="/usr/local/Cellar/pcre/8.44/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/bin/../include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/11.0.3/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+					<Add directory="/usr/local/Cellar/llvm/11.0.0/lib/clang/11.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/System/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 c-vips-pipeline/fast"/>
+					<CompileFile command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/opt/local/bin/gmake -j8 -f &quot;/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/nickembrey/source/c-vips-pipeline/main.c">
+			<Option target="c-vips-pipeline"/>
+		</Unit>
+		<Unit filename="/Users/nickembrey/source/c-vips-pipeline/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

@@ -1,0 +1,4 @@
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_BUILD_TYPE=Debug -D CMAKE_C_COMPILER=/usr/local/opt/llvm/bin/clang -G "CodeBlocks - Unix Makefiles" /Users/nickembrey/source/c-vips-pipeline
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/nickembrey/source/c-vips-pipeline/cmake-build-debug

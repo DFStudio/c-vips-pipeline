@@ -1,0 +1,3 @@
+/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/nickembrey/source/c-vips-pipeline/cmake-build-debug/CMakeFiles/vips-scale.dir
