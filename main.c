@@ -1,23 +1,25 @@
 #include <vips/vips.h>
 
 int main(int argc, char **argv) {
+
     VipsImage *in;
     VipsImage *out;
 
-    if( argc != 8 )
-        vips_error_exit( "usage: %s width height image output quality sigma x1", argv[0] );
+    if( argc != 9 ) vips_error_exit( "usage: %s width height image output quality strip sigma x1", argv[0] );
 
     int width = atoi(argv[1]);
     int height = atoi(argv[2]);
     char *image = argv[3];
     char *output = argv[4];
     char *quality = argv[5];
-    double sigma = atof(argv[6]);
-    double x1 = atof(argv[7]);
+    int strip = atoi(argv[6]);
+    double sigma = atof(argv[7]);
+    double x1 = atof(argv[8]);
 
     char options[200];
     strcat(options, "[Q=");
     strcat(options, quality);
+    if( strip != 0) strcat(options, ",strip");
     strcat(options, ",optimize_coding]");
 
     char output_and_options[200];
