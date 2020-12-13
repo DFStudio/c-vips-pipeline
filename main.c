@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
     VipsImage *in;
     VipsImage *out;
 
-    if( argc != 9 ) vips_error_exit( "usage: %s width height image output quality strip sigma x1", argv[0] );
+    if( argc != 11 ) vips_error_exit( "usage: %s width height image output quality strip autorotate profile sigma x1", argv[0] );
 
     int width = atoi(argv[1]);
     int height = atoi(argv[2]);
@@ -13,8 +13,10 @@ int main(int argc, char **argv) {
     char *output = argv[4];
     char *quality = argv[5];
     int strip = atoi(argv[6]);
-    double sigma = atof(argv[7]);
-    double x1 = atof(argv[8]);
+    int autorotate = atoi(argv[7]);
+    char *profile = argv[8];
+    double sigma = atof(argv[9]);
+    double x1 = atof(argv[10]);
 
     char options[200];
     strcat(options, "[Q=");
@@ -30,7 +32,12 @@ int main(int argc, char **argv) {
 
     in = vips_image_new_from_file( image, NULL );
 
-    vips_thumbnail(image, &in, width, "height", height, NULL);
+    if(strcmp("NONE", profile) != 0) {
+        vips_thumbnail(image, &in, width, "height", height, "no_rotate", !autorotate, NULL);
+    } else {
+        vips_thumbnail(image, &in, width, "height", height, "no_rotate", !autorotate, "export_profile", profile, NULL);
+    }
+
 
     vips_sharpen(in, &out, "sigma", sigma, "x1", x1, NULL );
     g_object_unref( in );
