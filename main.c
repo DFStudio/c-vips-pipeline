@@ -10,8 +10,8 @@ int main(int argc, char **argv) {
      * getopt (https://www.gnu.org/software/libc/manual/html_node/Getopt.html) is likely the best option. (Argp is
      * another standard argument parsing library that has a higher level of abstraction but there's not a Mac port.)
      */
-    if( argc != 11 ) {
-        vips_error_exit( "usage: %s width height image output quality strip autorotate profile sigma x1", argv[0] );
+    if( argc != 15 ) {
+        vips_error_exit( "usage: %s width height image output quality strip autorotate profile sigma x1 y2 y3 m1 m2", argv[0] );
     }
 
     // width and height of the image
@@ -34,17 +34,19 @@ int main(int argc, char **argv) {
     // path to the ICC profile
     char *profile = argv[8];
 
-    // sigma is the mask radius to use for unsharp mask
+    // parameters for the unsharp mask (see https://libvips.github.io/libvips/API/8.7/libvips-convolution.html#vips-sharpen)
     double sigma = atof(argv[9]);
-
-    // x1 is value for the smoothness threshold at which to apply the unsharp mask
     double x1 = atof(argv[10]);
+    double y2 = atof(argv[11]);
+    double y3 = atof(argv[12]);
+    double m1 = atof(argv[13]);
+    double m2 = atof(argv[14]);
 
-    char output_and_options[200];
+    char output_and_options[300];
     if( strip == 1) {
-        snprintf(output_and_options, 200, "%s[Q=%s%s", output, quality, ",strip,optimize_coding]");
+        snprintf(output_and_options, 300, "%s[Q=%s%s", output, quality, ",strip,optimize_coding]");
     } else {
-        snprintf(output_and_options, 200, "%s[Q=%s%s", output, quality, ",optimize_coding]");
+        snprintf(output_and_options, 300, "%s[Q=%s%s", output, quality, ",optimize_coding]");
     }
 
     VIPS_INIT( argv[0] );
@@ -58,7 +60,7 @@ int main(int argc, char **argv) {
         vips_thumbnail(image, &in, width, "height", height, "no_rotate", !autorotate, "export_profile", profile, NULL);
     }
 
-    vips_sharpen(in, &out, "sigma", sigma, "x1", x1, NULL );
+    vips_sharpen(in, &out, "sigma", sigma, "x1", x1, "y2", y2, "y3", y3, "m1", m1, "m2", m2, NULL );
     g_object_unref( in );
 
     // NOTE: if we wanted to add some extra processing (e.g., calculate an image hash) this would be the place to do it.
