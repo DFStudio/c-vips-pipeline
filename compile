@@ -1,0 +1,1 @@
+clang -Wall main.c `pkg-config vips --cflags --libs` -o vips-scale
