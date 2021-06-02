@@ -7,15 +7,9 @@ int main(int argc, char* argv[argc]) {
   VipsImage *in;
   VipsImage *out;
 
-  /** Note that for the brevity and clarity of the code, all arguments are positional only.
-   * If usage of the utility ever becomes complex enough that flag arguments would improve its quality,
-   * getopt (https://www.gnu.org/software/libc/manual/html_node/Getopt.html) is likely the best option. (Argp is
-   * another standard argument parsing library that has a higher level of abstraction but there's not a Mac port.)
-   */
-
   // We use positional arguments for now, because the only time executable is called from the command line is when it's being tested.
   // GLib, a VIPS dependency,  has a pretty standard command-line argument parser that gives you all the unix command line functionality 
-  // you're used to. There are also other standard options in for dealing with command line arguments in C, e.g. getopt and argp.
+  // you're used to. There are also other standard options for dealing with command line arguments in C, e.g. getopt and argp.
 
   if (argc != 15)
     vips_error_exit("usage: %s width height image output quality strip autorotate profile sigma x1 y2 y3 m1 m2", argv[0]);
@@ -72,10 +66,10 @@ int main(int argc, char* argv[argc]) {
   // Get a VIPS Image in memory from the input file
   in = vips_image_new_from_file(imageFileName, NULL);
 
-  /* You can also give an "import_profile" named argument which will be used if 
-   * the input image has no ICC profile, or if the profile embedded in the
-   * input image is broken. If there is a default profile already the code
-   * below could be rewritten to use it. */
+  // You can also give an "import_profile" named argument which will be used if 
+  // the input image has no ICC profile, or if the profile embedded in the
+  // input image is broken. If there is a default profile already the code
+  // below could be rewritten to use it.
 
   if(strcmp("NONE", profile))
     // Profile doesn't exist! Don't use an ICC profile.
