@@ -1,5 +1,7 @@
 #include <vips/vips.h>
 
+// argc: number of command line arguments
+// argv: an argc length array of null-terminated strings.
 int main(int argc, char* argv[argc]) {
 
   VipsImage *in;
@@ -10,6 +12,10 @@ int main(int argc, char* argv[argc]) {
    * getopt (https://www.gnu.org/software/libc/manual/html_node/Getopt.html) is likely the best option. (Argp is
    * another standard argument parsing library that has a higher level of abstraction but there's not a Mac port.)
    */
+
+  // We use positional arguments for now, because the only time executable is called from the command line is when it's being tested.
+  // GLib, a VIPS dependency,  has a pretty standard command-line argument parser that gives you all the unix command line functionality 
+  // you're used to. There are also other standard options in for dealing with command line arguments in C, e.g. getopt and argp.
 
   if (argc != 15)
     vips_error_exit("usage: %s width height image output quality strip autorotate profile sigma x1 y2 y3 m1 m2", argv[0]);
@@ -24,10 +30,8 @@ int main(int argc, char* argv[argc]) {
   const char *imageFileName = argv[3];
   const char *outputFileName = argv[4];
 
-  // We leave this as a string since it's just going into string snprintf later
-  const char *quality = argv[5];
-
   // Argument for the output quality should be an integer 70-100
+  const char *quality = argv[5];
   const int qualityNum = atoi(quality);
   if (qualityNum < 70 || qualityNum > 100)
     vips_error_exit("Output image quality must be an integer in the interval [70, 100].");
@@ -81,14 +85,16 @@ int main(int argc, char* argv[argc]) {
     vips_thumbnail(imageFileName, &in, width, "height", height, "no_rotate", !autorotate, "export_profile", profile, NULL);
 
 
+  // Sharpen the image using the given arguments. Note the NULL-terminated named optional argument list. 
+  // This is a common pattern in VIPS / GObject.
   vips_sharpen(in, &out, "sigma", sigma, "x1", x1, "y2", y2, "y3", y3, "m1", m1, "m2", m2, NULL);
 
   // All done with the input image, so free it.
   g_object_unref(in);
 
-  //
+
   // NOTE: If we wanted to add some extra processing (e.g. calculate an image hash) this would be the place to do it.
-  //
+
 
   // Write image to file.
   vips_image_write_to_file(out, output_and_options, NULL);
@@ -96,8 +102,10 @@ int main(int argc, char* argv[argc]) {
   // Free output image.
   g_object_unref(out);
 
-  // VIPS_INIT() tells atexit() to run vips_shutdown() at exit.
+  // VIPS_INIT() tells atexit() to run vips_shutdown() at exit if the platform supports it, which ours does.
   //vips_shutdown();
 
+  // All good main functions return EXIT_SUCCESS.
   return(EXIT_SUCCESS);
+
 }
