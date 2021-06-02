@@ -45,9 +45,9 @@ cmake --build .
 Coming soon!
 
 ## Miscellaneous
-It's possible to compile without pkg-config, but it's not as clean. Besides the vips project's dev tool of choice.
+It's possible to compile without pkg-config, but it's not as clean. Besides pkg-config is the VIPS project's dev tool of choice.
 ```
-clang main.c                        \
+clang main.c                      \
 -o vips-scale                     \
 -I/opt/local/include/glib-2.0     \
 -I/opt/local/lib/glib-2.0/include \
