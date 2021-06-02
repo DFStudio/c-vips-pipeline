@@ -53,7 +53,7 @@ int main(int argc, char* argv[argc]) {
   // The string that tells vips to enable the strip option, or an empty string if strip is 0.
   const char* stripOpt = strip ? "strip," : "";
 
-  // Compute the length that the output_and_options string needs to be to hold the format string plus the argument strings, minus the characters taken up by the format specifiers.
+  // Compute the length that the output_and_options string needs to be to hold the format string plus the argument strings, minus the characters taken up by the format specifiers, plus 1 for the terminating null character '\0' that snprintf adds.
   const int n = (strlen(format) - 6) + strlen(outputFileName) + strlen(quality) + strlen(stripOpt) + 1;
 
   // Build the output and options string using a VLA.
