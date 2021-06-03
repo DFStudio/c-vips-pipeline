@@ -1,15 +1,22 @@
 #include <vips/vips.h>
 
-// argc: number of command line arguments
-// argv: an argc length array of null-terminated strings.
+// argc: number of command line arguments. the length of the array argv.
+// argv: an argc length array of terminated strings, each properly terminated by a null character '\0'.
 int main(int argc, char* argv[argc]) {
 
   VipsImage *in;
   VipsImage *out;
 
   // We use positional arguments for now, because the only time executable is called from the command line is when it's being tested.
-  // GLib, a VIPS dependency,  has a pretty standard command-line argument parser that gives you all the unix command line functionality 
-  // you're used to. There are also other standard options for dealing with command line arguments in C, e.g. getopt and argp.
+  // Not to mention the slight overhead introduced by using something more maintainable. 
+  //
+  // We could put the logic dealing with VIPS in its own function, and then just have two different main functions - one for use by Java code,
+  // that just uses positional args, and the other for use at the command line, which takes command line arguments the way you'd expect.
+  //
+  // GLib, a VIPS dependency currently in our toolchain, has a pretty standard command-line argument parser that gives you all the unix 
+  // command line functionality you're used to. There are also other standard options for dealing with command line arguments in C, e.g. 
+  // getopt and argp.
+  
 
   if (argc != 15)
     vips_error_exit("usage: %s width height image output quality strip autorotate profile sigma x1 y2 y3 m1 m2", argv[0]);
@@ -72,7 +79,7 @@ int main(int argc, char* argv[argc]) {
   // below could be rewritten to use it.
 
   if(strcmp("NONE", profile))
-    // Profile doesn't exist! Don't use an ICC profile.
+    // Profile doesn't exist! Don't use an ICC profile (i.e. make one automatically).
     vips_thumbnail(imageFileName, &in, width, "height", height, "no_rotate", !autorotate, NULL);
   else
     // Profile exists! Transform the image to the target colourspace defined by the ICC profile before writing.

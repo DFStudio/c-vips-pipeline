@@ -42,17 +42,5 @@ cmake --build .
 
 ## Usage
 
-Coming soon!
-
-## Miscellaneous
-It's possible to compile without pkg-config, but it's not as clean. Besides pkg-config is the VIPS project's dev tool of choice.
-```
-clang main.c                      \
--o vips-scale                     \
--I/opt/local/include/glib-2.0     \
--I/opt/local/lib/glib-2.0/include \
--lvips                            \
--lglib-2.0                        \
--lgobject-2.0                     \
-```
+Right now, the easiest way to use the tool from the command line is to edit the arguments in the view-scale-spec file, and then run `./runspec` to execute vips-scale with those arguments.
 

@@ -1,20 +1,22 @@
-# Coming soon!
+# This file specifies arguments used by runspec to run vips-scale-spec.
 
-width=
-height=
-image=
-output=
-quality=
-strip=
-autorotate=
-profile=
+export VIPS_WIDTH=4032
+export VIPS_HEIGHT=4032
+export VIPS_IMAGE=sample.jpg
+export VIPS_OUTPUT=output.jpg
+export VIPS_QUALITY=80
+export VIPS_STRIP=0
+export VIPS_AUTOROTATE=0
+export VIPS_PROFILE=0
 
-# For vips_sharpen, these are ecommended settings for screen output:
+# For vips_sharpen, these are recommended settings for screen output:
 # https://libvips.github.io/libvips/API/8.7/libvips-convolution.html#vips-sharpen
 
-sigma=0.5
-x1=2
-y2=10
-y3=20
-m1=0
-m2=3
+export VIPS_SIGMA=0.5
+export VIPS_X1=2
+export VIPS_Y2=10
+export VIPS_Y3=20
+export VIPS_M1=0
+export VIPS_M2=3
+
+# They recommend to increase (or decrease) the sharpness by increasing (or decreasing) the m2 parameter (m2 >= 0).
