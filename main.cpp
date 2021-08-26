@@ -12,7 +12,7 @@ static const char USAGE[] = R"(Vips Scale.
 Usage:
   vips-scale --input=<input> --output=<output>
     --width=<width> --height=<height>
-    --quality=<q> [--strip]
+    [--quality=<q> --strip]
     [--autorotate --profile=<path> --intent=<intent>]
     [--sharpen=<params>]
     [--stats]
@@ -22,7 +22,7 @@ Options:
   --version           Show version.
   --input=<file>      Set the input file.
   --output=<file>     Set the output file.
-  --quality=<q>       Set the output quality.
+  --quality=<q>       Set the output quality. [default: 70]
   --strip             Strip metadata in the output.
   --autorotate        Automatically apply rotation from the input file.
   --profile=<path>    The path to the ICC profile.
