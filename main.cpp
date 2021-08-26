@@ -10,7 +10,8 @@ using namespace vips;
 
 static const char USAGE[] = R"(Vips Scale.
 Usage:
-  vips-scale <input> <output> <width> <height>
+  vips-scale --input=<input> --output=<output>
+    --width=<width> --height=<height>
     --quality=<q> [--strip]
     [--autorotate --profile=<path> --intent=<intent>]
     [--sharpen=<params>]
@@ -19,6 +20,8 @@ Usage:
 Options:
   -h --help           Show this screen.
   --version           Show version.
+  --input=<file>      Set the input file.
+  --output=<file>     Set the output file.
   --quality=<q>       Set the output quality.
   --strip             Strip metadata in the output.
   --autorotate        Automatically apply rotation from the input file.
@@ -80,7 +83,7 @@ int main(int argc, char **argv) {
         }
 
         VOption *options = VImage::option()
-                ->set("height", (int)args["<height>"].asLong())
+                ->set("height", (int)args["--height"].asLong())
                 ->set("no_rotate", !args["--autorotate"].asBool())
                 ->set("intent", intent)
                 ;
@@ -88,8 +91,8 @@ int main(int argc, char **argv) {
             options = options->set("export_profile", args["--profile"].asString().c_str());
 
         image = VImage::thumbnail(
-                args["<input>"].asString().c_str(),
-                (int)args["<width>"].asLong(),
+                args["--input"].asString().c_str(),
+                (int)args["--width"].asLong(),
                 options
         );
     }
@@ -130,7 +133,7 @@ int main(int argc, char **argv) {
                 ->set("Q", (int)args["--quality"].asLong())
                 ->set("strip", args["--strip"].asBool())
                 ->set("optimize_coding", true);
-        image.write_to_file(args["<output>"].asString().c_str(), options);
+        image.write_to_file(args["--output"].asString().c_str(), options);
 
         log_time(stats, time, "write");
     }
