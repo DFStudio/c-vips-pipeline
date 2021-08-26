@@ -1,2 +1,5 @@
+.DS_Store
 /cmake-build-debug/
 /.idea/
+/run/*
+!/run/sample.jpg
