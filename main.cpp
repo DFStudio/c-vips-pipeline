@@ -92,14 +92,16 @@ int main(int argc, char **argv) {
                 ->set("no_rotate", !args["--autorotate"].asBool())
                 ->set("intent", intent)
                 ;
-        if(args["--profile"].isString())
-            options = options->set("export_profile", args["--profile"].asString().c_str());
 
         image = VImage::thumbnail(
                 args["--input"].asString().c_str(),
                 (int)args["--width"].asLong(),
                 options
         );
+
+        if(args["--profile"].isString()) {
+            image = image.icc_transform(args["--profile"].asString().c_str());
+        }
     }
 
     log_time(stats, time, "load & thumbnail");
