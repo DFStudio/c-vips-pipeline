@@ -3,9 +3,12 @@
 #include <iostream>
 #include <sstream>
 #include <chrono>
+#include <vips/vips.h>
 #include <vips/vips8>
 #include <docopt/docopt.h>
+#include "unsharp.h"
 
+// default --sharpen=0.5/0/10/20/0/3
 using namespace vips;
 
 static const char USAGE[] = R"(Vips Scale.
@@ -15,7 +18,7 @@ Usage:
     [--quality=<q> --strip]
     [--autorotate --profile=<path> --intent=<intent>]
     [--sharpen=<params>]
-    [--stats]
+    [--stats --unsharp]
 
 Options:
   -h --help           Show this screen.
@@ -31,6 +34,7 @@ Options:
   --sharpen=<params>  The sharpen parameters, if sharpening should be performed.
                       Expressed as slash-delimited numbers: "sigma/x1/y2/y3/m1/m2".
   --stats             Print the time taken to perform each operation.
+  --unsharp           Apply an unsharp filter
 )";
 
 typedef std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds> time_point;
@@ -59,6 +63,7 @@ int main(int argc, char **argv) {
 
     if(VIPS_INIT( argv[0] ))
         vips_error_exit("init");
+    unsharp_get_type();
 
     log_time(stats, time, "vips init");
 
@@ -98,6 +103,16 @@ int main(int argc, char **argv) {
     }
 
     log_time(stats, time, "load & thumbnail");
+
+    if(args["--unsharp"].asBool()) {
+        VImage blur = image.gaussblur(1.0);
+        log_time(stats, time, "blur");
+        VipsImage *_sharpened;
+        unsharp(image.get_image(), blur.get_image(), &_sharpened);
+        image = VImage(_sharpened);
+
+        log_time(stats, time, "unsharp");
+    }
 
     if(args["--sharpen"].isString()) {
         std::stringstream test(args["--sharpen"].asString());

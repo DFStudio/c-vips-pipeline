@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1)
 project(vips-scale
         VERSION 1.0
         DESCRIPTION "A utility for scaling to JPEG with VIPS"
-        LANGUAGES CXX)
+        LANGUAGES C CXX)
 
 IF(APPLE)
     list(APPEND CMAKE_PREFIX_PATH "/usr/local")
@@ -10,7 +10,7 @@ ENDIF()
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(vips-scale main.cpp)
+add_executable(vips-scale main.cpp unsharp.c unsharp.h)
 
 target_include_directories(vips-scale SYSTEM PUBLIC /usr/local/include /opt/homebrew/include)
 target_link_directories(vips-scale PUBLIC /usr/local/lib /opt/homebrew/lib)
