@@ -10,6 +10,7 @@ typedef struct _Unsharp {
     VipsImage *in;
     VipsImage *blur;
     VipsImage *out;
+    double strength;
 
 } Unsharp;
 
@@ -22,13 +23,6 @@ typedef struct _UnsharpClass {
 } UnsharpClass;
 
 G_DEFINE_TYPE( Unsharp, unsharp, VIPS_TYPE_OPERATION);
-
-void *
-my_many( VipsImage *out, void *a, void *b ) {
-    VipsImage **images = a;
-    VipsRegion **regions = vips_start_many(out, a, b);
-    return regions;
-}
 
 static int unsharp_generate( VipsRegion *or, void *vseq, void *a, void *b, gboolean *stop )
 {
@@ -47,6 +41,7 @@ static int unsharp_generate( VipsRegion *or, void *vseq, void *a, void *b, gbool
     VipsImage *blur = inputs[1];
 
     Unsharp *unsharp = (Unsharp *) b;
+    double strength = unsharp->strength;
     int line_size = r->width * unsharp->in->Bands;
 
     int x, y;
@@ -69,7 +64,7 @@ static int unsharp_generate( VipsRegion *or, void *vseq, void *a, void *b, gbool
         for( x = 0; x < line_size; x++ ) {
             unsigned char in_pixel = in_bytes[x];
             unsigned char blur_pixel = blur_bytes[x];
-            int sum = in_pixel + (in_pixel - blur_pixel) / 4;
+            int sum = in_pixel + (int)((in_pixel - blur_pixel) * strength);
 
             if(sum < 0) {
                 sum = 0;
@@ -78,14 +73,6 @@ static int unsharp_generate( VipsRegion *or, void *vseq, void *a, void *b, gbool
             }
 
             out_bytes[x] = (unsigned char)sum;
-
-//            if(in_pixel < blur_pixel) {
-//                out_bytes[x] = in_pixel + (blur_pixel - in_pixel) / 2;
-//            } else if(blur_pixel < in_pixel) {
-//                out_bytes[x] = blur_pixel + (in_pixel - blur_pixel) / 2;
-//            } else {
-//                out_bytes[x] = in_pixel;
-//            }
         }
     }
 
@@ -116,7 +103,7 @@ unsharp_build( VipsObject *object )
         return( -1 );
 
     if( vips_image_generate( unsharp->out,
-                             my_many,
+                             vips_start_many,
                              unsharp_generate,
                              vips_stop_many,
                              vips_allocate_input_array(unsharp->out, unsharp->in, unsharp->blur, NULL),
@@ -156,11 +143,19 @@ unsharp_class_init( UnsharpClass *class )
                     "Output image",
                     VIPS_ARGUMENT_REQUIRED_OUTPUT,
                     G_STRUCT_OFFSET( Unsharp, out ) );
+
+    VIPS_ARG_DOUBLE(class, "strength", 4,
+                    "Strength",
+                    "Unsharp strength",
+                    VIPS_ARGUMENT_OPTIONAL_INPUT,
+                    G_STRUCT_OFFSET( Unsharp, strength ),
+                    0, 255, 0.5);
 }
 
 static void
 unsharp_init( Unsharp *unsharp )
 {
+    unsharp->strength = 0.5;
 }
 
 /**
@@ -178,6 +173,5 @@ int unsharp( VipsImage *in, VipsImage *blur, VipsImage **out, ... )
     result = vips_call_split( "unsharp", ap, in, blur, out );
     va_end( ap );
 
-    unsharp_get_type();
     return( result );
 }
