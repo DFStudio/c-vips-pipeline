@@ -37,7 +37,7 @@ Options:
   --unsharp           Apply an unsharp filter
 )";
 
-typedef std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds> time_point;
+typedef std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> time_point;
 
 void log_time(bool enabled, time_point &time, const std::string& message) {
     if(!enabled)
