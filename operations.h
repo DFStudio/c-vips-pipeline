@@ -24,6 +24,7 @@ bool composite(std::map<int, vips::VImage> &slots, const Arguments &arguments);
 bool embed(std::map<int, vips::VImage> &slots, const Arguments &arguments);
 bool flatten(std::map<int, vips::VImage> &slots, const Arguments &arguments);
 bool add_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments);
+bool scale(std::map<int, vips::VImage> &slots, const Arguments &arguments);
 bool write(std::map<int, vips::VImage> &slots, const Arguments &arguments);
 bool free_slot(std::map<int, vips::VImage> &slots, const Arguments &arguments);
 

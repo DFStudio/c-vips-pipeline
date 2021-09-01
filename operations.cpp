@@ -129,6 +129,18 @@ bool add_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     return true;
 }
 
+bool scale(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+    // <slot in = 0> <slot out = 1> <hscale = 2> <vscale = 3>
+    if(!arguments.require(4)) return false;
+
+    slots[arguments.get_int(1)] = slots[arguments.get_int(0)].resize(
+            arguments.get_double(2),
+            VImage::option()->set("vscale", arguments.get_double(3))
+    );
+
+    return true;
+}
+
 bool flatten(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <background red = 2> <background green = 3> <background blue = 4>
     if(!arguments.require(5)) return false;
@@ -201,6 +213,7 @@ const std::map<std::string, image_operation> operations = {
         {"embed", embed},
         {"flatten", flatten},
         {"add_alpha", add_alpha},
+        {"scale", scale},
         {"write", write},
         {"free", free_slot}
 };

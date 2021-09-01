@@ -21,10 +21,11 @@ For optional values, an underscore (`_`) represents no value.
 
 @load <file in = 0> <slot out = 1>
 @composite <base slot = 0> <overlay slot = 1> <slot out = 2> <overlay x = 3> <overlay y = 4> <blend mode = 5>
-@extend <slot in = 0> <slot out = 1> <x = 2> <y = 3> <width = 4> <height = 5> <extend = 6> // vips_embed
+@embed <slot in = 0> <slot out = 1> <x = 2> <y = 3> <width = 4> <height = 5> <extend = 6> <bg red = 7> <bg green = 8> <bg blue = 9>
  
 @flatten <slot in = 0> <slot out = 1> <background red = 2> <background green = 3> <background blue = 4>
-@add_alpha <slot in = 0> <slot out = 1> // vips_addalpha
+@add_alpha <slot in = 0> <slot out = 1>
+@scale <slot in = 0> <slot out = 1> <hscale = 2> <vscale = 3>
 
 @write <slot in = 0> <file out = 1>
 @free <slot = 0>
