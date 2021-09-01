@@ -37,6 +37,7 @@ int main(int argc, char **argv) {
 
     std::map<int, VImage> slots;
     for (auto &command : commands) {
+        std::cout << command.name << std::endl;
         auto operation = get_operation(command.name);
         if(!operation(slots, command)) {
             return 1;

@@ -8,8 +8,13 @@
 
 using namespace vips;
 
-bool present(const std::string &arg) {
-    return arg != "_";
+bool load_file(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+    // <file in = 0> <slot out = 1>
+    if(!arguments.require(2)) return false;
+
+    slots[arguments.get_int(1)] = VImage::new_from_file(arguments.get_string(0).c_str());
+
+    return true;
 }
 
 bool load_thumbnail(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
@@ -68,6 +73,111 @@ bool unsharp(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     return true;
 }
 
+bool composite(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+    // <base slot = 0> <overlay slot = 1> <slot out = 2> <overlay x = 3> <overlay y = 4> <blend mode? = 5>
+    if(!arguments.require(6)) return false;
+
+    VipsBlendMode mode = VIPS_BLEND_MODE_OVER;
+    if(arguments.has(5)) {
+        auto &arg = arguments.get_string(5);
+        if(arg == "clear") mode = VIPS_BLEND_MODE_CLEAR;
+        else if(arg == "source") mode = VIPS_BLEND_MODE_SOURCE;
+        else if(arg == "over") mode = VIPS_BLEND_MODE_OVER;
+        else if(arg == "in") mode = VIPS_BLEND_MODE_IN;
+        else if(arg == "out") mode = VIPS_BLEND_MODE_OUT;
+        else if(arg == "atop") mode = VIPS_BLEND_MODE_ATOP;
+        else if(arg == "dest") mode = VIPS_BLEND_MODE_DEST;
+        else if(arg == "dest_over") mode = VIPS_BLEND_MODE_DEST_OVER;
+        else if(arg == "dest_in") mode = VIPS_BLEND_MODE_DEST_IN;
+        else if(arg == "dest_out") mode = VIPS_BLEND_MODE_DEST_OUT;
+        else if(arg == "dest_atop") mode = VIPS_BLEND_MODE_DEST_ATOP;
+        else if(arg == "xor") mode = VIPS_BLEND_MODE_XOR;
+        else if(arg == "add") mode = VIPS_BLEND_MODE_ADD;
+        else if(arg == "saturate") mode = VIPS_BLEND_MODE_SATURATE;
+        else if(arg == "multiply") mode = VIPS_BLEND_MODE_MULTIPLY;
+        else if(arg == "screen") mode = VIPS_BLEND_MODE_SCREEN;
+        else if(arg == "overlay") mode = VIPS_BLEND_MODE_OVERLAY;
+        else if(arg == "darken") mode = VIPS_BLEND_MODE_DARKEN;
+        else if(arg == "lighten") mode = VIPS_BLEND_MODE_LIGHTEN;
+        else if(arg == "colour_dodge") mode = VIPS_BLEND_MODE_COLOUR_DODGE;
+        else if(arg == "colour_burn") mode = VIPS_BLEND_MODE_COLOUR_BURN;
+        else if(arg == "hard_light") mode = VIPS_BLEND_MODE_HARD_LIGHT;
+        else if(arg == "soft_light") mode = VIPS_BLEND_MODE_SOFT_LIGHT;
+        else if(arg == "difference") mode = VIPS_BLEND_MODE_DIFFERENCE;
+        else if(arg == "exclusion") mode = VIPS_BLEND_MODE_EXCLUSION;
+    }
+
+    auto x = slots[arguments.get_int(1)].bands();
+    slots[arguments.get_int(2)] = slots[arguments.get_int(0)].composite2(
+            slots[arguments.get_int(1)],
+            mode,
+            VImage::option()
+                    ->set("x", arguments.get_int(3))
+                    ->set("y", arguments.get_int(4))
+    );
+
+    return true;
+}
+
+bool add_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+    // <slot in = 0> <slot out = 1> <alpha = 2>
+    if(!arguments.require(3)) return false;
+
+    slots[arguments.get_int(1)] = slots[arguments.get_int(0)]
+            .bandjoin_const({arguments.get_double(2)});
+
+    return true;
+}
+
+bool flatten(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+    // <slot in = 0> <slot out = 1> <background red = 2> <background green = 3> <background blue = 4>
+    if(!arguments.require(5)) return false;
+
+    slots[arguments.get_int(1)] = slots[arguments.get_int(0)].flatten(
+            VImage::option()
+                    ->set("background", std::vector<double>{
+                            arguments.get_double(2),
+                            arguments.get_double(3),
+                            arguments.get_double(4)
+                    })
+    );
+
+    return true;
+}
+
+bool embed(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+    // <slot in = 0> <slot out = 1> <x = 2> <y = 3> <width = 4> <height = 5> <extend = 6> <bg red = 7> <bg green = 8> <bg blue = 9>
+    if(!arguments.require(10)) return false;
+
+    VipsExtend extend = VIPS_EXTEND_BACKGROUND;
+    if(arguments.has(6)) {
+        auto &arg = arguments.get_string(6);
+        if(arg == "black") extend = VIPS_EXTEND_BLACK;
+        else if(arg == "copy") extend = VIPS_EXTEND_COPY;
+        else if(arg == "repeat") extend = VIPS_EXTEND_REPEAT;
+        else if(arg == "mirror") extend = VIPS_EXTEND_MIRROR;
+        else if(arg == "white") extend = VIPS_EXTEND_WHITE;
+        else if(arg == "background") extend = VIPS_EXTEND_BACKGROUND;
+    }
+
+    slots[arguments.get_int(1)] = slots[arguments.get_int(0)].embed(
+            arguments.get_int(2),
+            arguments.get_int(3),
+            arguments.get_int(4),
+            arguments.get_int(5),
+            VImage::option()
+                    ->set("extend", extend)
+                    ->set("background", std::vector<double> {
+                            arguments.get_double(7),
+                            arguments.get_double(8),
+                            arguments.get_double(9)
+                    })
+    );
+
+    return true;
+
+}
+
 bool write(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <file out = 1>
     if(!arguments.require(2)) return false;
@@ -75,17 +185,24 @@ bool write(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     return true;
 }
 
+bool free_slot(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+    // <slot = 0>
+    if(!arguments.require(1)) return false;
+    slots.erase(arguments.get_int(0));
+    return true;
+}
+
 const std::map<std::string, image_operation> operations = {
-//        {"load", load_file},
+        {"load", load_file},
         {"thumbnail", load_thumbnail},
         {"profile", transform_profile},
         {"unsharp", unsharp},
-//        {"draw_image", draw_image},
-//        {"extend", extend},
-//        {"flatten", flatten},
-//        {"add_alpha", add_alpha},
-        {"write", write}
-//        {"free", free_slot}
+        {"composite", composite},
+        {"embed", embed},
+        {"flatten", flatten},
+        {"add_alpha", add_alpha},
+        {"write", write},
+        {"free", free_slot}
 };
 
 image_operation get_operation(const std::string &name) {
