@@ -26,6 +26,9 @@ For optional values, an underscore (`_`) represents no value.
 @flatten <slot in = 0> <slot out = 1> <background red = 2> <background green = 3> <background blue = 4>
 @add_alpha <slot in = 0> <slot out = 1>
 @scale <slot in = 0> <slot out = 1> <hscale = 2> <vscale = 3>
+@fit <slot in = 0> <slot out = 1> <width? = 2> <height? = 3>
+@trim_alpha <slot in = 0> <slot out = 1> <threshold = 2> <margin = 3>
+@multiply_color <slot in = 0> <slot out = 1> <r = 2> <g = 3> <b = 4> <a = 5>
 
 @write <slot in = 0> <file out = 1>
 @free <slot = 0>

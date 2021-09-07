@@ -38,11 +38,9 @@ bool load_thumbnail(std::map<int, vips::VImage> &slots, const Arguments &argumen
         }
     }
 
-    VOption *options = VImage::option()
-            ->set("height", arguments.get_int(3))
-            ->set("no_rotate", arguments.get_bool(4))
-            ->set("intent", intent)
-    ;
+    VOption *options = VImage::option()->set("no_rotate", arguments.get_bool(4))->set("intent", intent);
+    if(arguments.has(3))
+        options->set("height", arguments.get_int(3));
 
     slots[arguments.get_int(1)] = VImage::thumbnail(
             arguments.get_string(0).c_str(),
@@ -107,7 +105,6 @@ bool composite(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
         else if(arg == "exclusion") mode = VIPS_BLEND_MODE_EXCLUSION;
     }
 
-    auto x = slots[arguments.get_int(1)].bands();
     slots[arguments.get_int(2)] = slots[arguments.get_int(0)].composite2(
             slots[arguments.get_int(1)],
             mode,
@@ -129,6 +126,20 @@ bool add_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     return true;
 }
 
+bool multiply_color(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+    // <slot in = 0> <slot out = 1> <r = 2> <g = 3> <b = 4> <a = 5>
+    if(!arguments.require(6)) return false;
+
+    slots[arguments.get_int(1)] = slots[arguments.get_int(0)] * std::vector<double>{
+        arguments.get_double(2),
+        arguments.get_double(3),
+        arguments.get_double(4),
+        arguments.get_double(5)
+    };
+
+    return true;
+}
+
 bool scale(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <hscale = 2> <vscale = 3>
     if(!arguments.require(4)) return false;
@@ -138,6 +149,54 @@ bool scale(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
             VImage::option()->set("vscale", arguments.get_double(3))
     );
 
+    return true;
+}
+
+bool fit(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+    // <slot in = 0> <slot out = 1> <width? = 2> <height? = 3>
+    if(!arguments.require(4)) return false;
+
+    auto input = slots[arguments.get_int(0)];
+    auto scale = -1.0;
+    if(arguments.has(2)) {
+        scale = arguments.get_double(2) / input.width();
+    }
+    if(arguments.has(3)) {
+        double vscale = arguments.get_double(3) / input.height();
+        if(scale < 0 || vscale < scale)
+            scale = vscale;
+    }
+    if(scale < 0) {
+        slots[arguments.get_int(1)] = input.copy();
+    } else {
+        slots[arguments.get_int(1)] = input.resize(scale, VImage::option());
+    }
+
+    return true;
+}
+
+bool trim_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+    // <slot in = 0> <slot out = 1> <threshold = 2> <margin = 3>
+    if(!arguments.require(4)) return false;
+
+    auto input = slots[arguments.get_int(0)];
+
+    auto alpha = input.extract_band(3);
+    int left, top, width, height;
+    left = alpha.find_trim(&top, &width, &height, VImage::option()->set("threshold", arguments.get_double(2))->set("background", std::vector<double>{0}));
+    int margin = arguments.get_int(3);
+    left -= margin;
+    top -= margin;
+    width += margin * 2;
+    height += margin * 2;
+    if(left < 0) left = 0;
+    if(top < 0) top = 0;
+    if(width < 1) width = 1;
+    if(width > input.width() - left) width = input.width() - left;
+    if(height < 1) height = 1;
+    if(height > input.height() - top) height = input.height() - top;
+
+    slots[arguments.get_int(1)] = input.extract_area(left, top, width, height);
     return true;
 }
 
@@ -187,7 +246,6 @@ bool embed(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     );
 
     return true;
-
 }
 
 bool write(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
@@ -214,6 +272,9 @@ const std::map<std::string, image_operation> operations = {
         {"flatten", flatten},
         {"add_alpha", add_alpha},
         {"scale", scale},
+        {"fit", fit},
+        {"trim_alpha", trim_alpha},
+        {"multiply_color", multiply_color},
         {"write", write},
         {"free", free_slot}
 };
