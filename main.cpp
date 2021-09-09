@@ -12,7 +12,7 @@
 using namespace vips;
 
 int main(int argc, char **argv) {
-    if(VIPS_INIT( argv[0] ))
+    if (VIPS_INIT(argv[0]))
         vips_error_exit("init");
     unsharp_get_type();
 
@@ -20,10 +20,10 @@ int main(int argc, char **argv) {
     std::string current_name;
     std::vector<std::string> current_command;
 
-    for(int i = 0; i < argc; i++) {
+    for (int i = 0; i < argc; i++) {
         std::string arg(argv[i]);
-        if(!arg.empty() && arg[0] == '@') {
-            if(!current_name.empty())
+        if (!arg.empty() && arg[0] == '@') {
+            if (!current_name.empty())
                 commands.emplace_back(current_name, current_command);
             current_name = arg.substr(1);
             current_command.clear();
@@ -32,17 +32,17 @@ int main(int argc, char **argv) {
         }
     }
 
-    if(!current_name.empty())
+    if (!current_name.empty())
         commands.emplace_back(current_name, current_command);
 
     std::map<int, VImage> slots;
-    for (auto &command : commands) {
+    for (auto &command: commands) {
         std::cout << command.name << std::endl;
         auto operation = get_operation(command.name);
-        if(!operation(slots, command)) {
+        if (!operation(slots, command)) {
             return 1;
         }
     }
 
-    return( 0 );
+    return (0);
 }
