@@ -257,6 +257,15 @@ bool write(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     return true;
 }
 
+bool consume(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+    // <slot = 0>
+    if (!arguments.require(1)) return false;
+    size_t size;
+    void *memory = slots[arguments.get_int(0)].write_to_memory(&size);
+    g_free(memory);
+    return true;
+}
+
 bool free_slot(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot = 0>
     if (!arguments.require(1)) return false;
@@ -278,6 +287,7 @@ const std::map<std::string, image_operation> operations = {
         {"trim_alpha",     trim_alpha},
         {"multiply_color", multiply_color},
         {"write",          write},
+        {"consume",        consume},
         {"free",           free_slot}
 };
 

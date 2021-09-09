@@ -31,5 +31,6 @@ For optional values, an underscore (`_`) represents no value.
 @multiply_color <slot in = 0> <slot out = 1> <r = 2> <g = 3> <b = 4> <a = 5>
 
 @write <slot in = 0> <file out = 1>
+@consume <slot = 0>
 @free <slot = 0>
 ```
