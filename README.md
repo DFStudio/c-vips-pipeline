@@ -15,22 +15,24 @@ dramatically.
 For optional values, an underscore (`_`) represents no value.
 
 ```
-@thumbnail <file in = 0> <slot out = 1> <width = 2> <height? = 3> <no-rotate = 4> <intent? = 5>
-@profile <slot in = 0> <slot out = 1> <profile = 2>
-@unsharp <slot in = 0> <slot out = 1> <sigma = 2> <strength = 3>
+@thumbnail <file in> <slot out> <width> <height?> <no-rotate> <intent?>
+@profile <slot in> <slot out> <profile>
+@unsharp <slot in> <slot out> <sigma> <strength>
 
-@load <file in = 0> <slot out = 1>
-@composite <base slot = 0> <overlay slot = 1> <slot out = 2> <overlay x = 3> <overlay y = 4> <blend mode = 5>
-@embed <slot in = 0> <slot out = 1> <x = 2> <y = 3> <width = 4> <height = 5> <extend = 6> <bg red = 7> <bg green = 8> <bg blue = 9>
+@load <file in> <slot out>
+@composite <base slot> <overlay slot> <slot out> <overlay x> <overlay y> <blend mode>
+@embed <slot in> <slot out> <x> <y> <width> <height> <extend> <bg red> <bg green> <bg blue>
  
-@flatten <slot in = 0> <slot out = 1> <background red = 2> <background green = 3> <background blue = 4>
-@add_alpha <slot in = 0> <slot out = 1>
-@scale <slot in = 0> <slot out = 1> <hscale = 2> <vscale = 3>
-@fit <slot in = 0> <slot out = 1> <width? = 2> <height? = 3>
-@trim_alpha <slot in = 0> <slot out = 1> <threshold = 2> <margin = 3>
-@multiply_color <slot in = 0> <slot out = 1> <r = 2> <g = 3> <b = 4> <a = 5>
+@flatten <slot in> <slot out> <background red> <background green> <background blue>
+@add_alpha <slot in> <slot out>
+@scale <slot in> <slot out> <hscale> <vscale>
+@fit <slot in> <slot out> <width?> <height?>
+@trim_alpha <slot in> <slot out> <threshold> <margin>
+@multiply_color <slot in> <slot out> <r> <g> <b> <a>
 
-@write <slot in = 0> <file out = 1>
-@consume <slot = 0>
-@free <slot = 0>
+@mime_jpeg <slot>
+@mime_webp <slot>
+@write <slot in> <file out>
+@consume <slot>
+@free <slot>
 ```

@@ -12,7 +12,7 @@ Arguments::Arguments(std::string name, std::vector<std::string> arguments)
 
 bool Arguments::require(int count) const {
     if(this->arguments.size() != count) {
-        std::cout << "Error: " << this->name << " expected " << count << " arguments, got " << this->arguments.size()
+        std::cerr << "Error: " << this->name << " expected " << count << " arguments, got " << this->arguments.size()
                   << std::endl;
         return false;
     } else {

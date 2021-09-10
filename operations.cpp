@@ -8,11 +8,16 @@
 
 using namespace vips;
 
-bool load_file(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+bool load(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <file in = 0> <slot out = 1>
     if (!arguments.require(2)) return false;
 
-    slots[arguments.get_int(1)] = VImage::new_from_file(arguments.get_string(0).c_str());
+    const auto& file = arguments.get_string(0);
+    if(file == "-") {
+        slots[arguments.get_int(1)] = VImage::new_from_source(VSource::new_from_descriptor(0), "");
+    } else {
+        slots[arguments.get_int(1)] = VImage::new_from_file(file.c_str());
+    }
 
     return true;
 }
@@ -42,11 +47,20 @@ bool load_thumbnail(std::map<int, vips::VImage> &slots, const Arguments &argumen
     if (arguments.has(3))
         options->set("height", arguments.get_int(3));
 
-    slots[arguments.get_int(1)] = VImage::thumbnail(
-            arguments.get_string(0).c_str(),
-            arguments.get_int(2),
-            options
-    );
+    const auto &file = arguments.get_string(0);
+    if(file == "-") {
+        slots[arguments.get_int(1)] = VImage::thumbnail_source(
+                VSource::new_from_descriptor(0),
+                arguments.get_int(2),
+                options
+        );
+    } else {
+        slots[arguments.get_int(1)] = VImage::thumbnail(
+                file.c_str(),
+                arguments.get_int(2),
+                options
+        );
+    }
 
     return true;
 }
@@ -257,6 +271,14 @@ bool write(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     return true;
 }
 
+bool stream(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+    // <slot in = 0> <format = 1>
+    if (!arguments.require(2)) return false;
+    auto target = VTarget::new_to_descriptor(1);
+    slots[arguments.get_int(0)].write_to_target(arguments.get_string(1).c_str(), target);
+    return true;
+}
+
 bool consume(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot = 0>
     if (!arguments.require(1)) return false;
@@ -274,7 +296,7 @@ bool free_slot(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
 }
 
 const std::map<std::string, image_operation> operations = {
-        {"load",           load_file},
+        {"load",           load},
         {"thumbnail",      load_thumbnail},
         {"profile",        transform_profile},
         {"unsharp",        unsharp},
@@ -286,6 +308,7 @@ const std::map<std::string, image_operation> operations = {
         {"fit",            fit},
         {"trim_alpha",     trim_alpha},
         {"multiply_color", multiply_color},
+        {"stream",         stream},
         {"write",          write},
         {"consume",        consume},
         {"free",           free_slot}
