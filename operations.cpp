@@ -214,8 +214,8 @@ void flatten(MachineState *state, const Arguments &arguments) {
 }
 
 void embed(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <x = 2> <y = 3> <width = 4> <height = 5> <extend = 6> <bg red = 7> <bg green = 8> <bg blue = 9>
-    arguments.require(10);
+    // <slot in = 0> <slot out = 1> <x = 2> <y = 3> <width = 4> <height = 5> <extend = 6> <bg red = 7> <bg green = 8> <bg blue = 9> <bg alpha = 10>
+    arguments.require(11);
 
     VipsExtend extend = VIPS_EXTEND_BACKGROUND;
     if (arguments.has(6)) {
@@ -227,19 +227,22 @@ void embed(MachineState *state, const Arguments &arguments) {
         else if (arg == "white") extend = VIPS_EXTEND_WHITE;
         else if (arg == "background") extend = VIPS_EXTEND_BACKGROUND;
     }
-
-    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).embed(
+    std::vector<double> bg {
+            arguments.get_double(7),
+            arguments.get_double(8),
+            arguments.get_double(9)
+    };
+    auto input_image = state->get_image(arguments.get_string(0));
+    if(input_image.bands() == 4)
+        bg.push_back(arguments.get_double(10));
+    state->set_image(arguments.get_string(1), input_image.embed(
             arguments.get_int(2),
             arguments.get_int(3),
             arguments.get_int(4),
             arguments.get_int(5),
             VImage::option()
                     ->set("extend", extend)
-                    ->set("background", std::vector<double>{
-                            arguments.get_double(7),
-                            arguments.get_double(8),
-                            arguments.get_double(9)
-                    })
+                    ->set("background", bg)
     ));
 }
 

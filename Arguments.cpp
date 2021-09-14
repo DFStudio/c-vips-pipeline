@@ -9,8 +9,8 @@
 #include <exception>
 #include <fmt/core.h>
 
-Arguments::Arguments(std::string name, std::vector<std::string> arguments, MachineState *state)
-        : name(std::move(name)), arguments(std::move(arguments)), state(state) {}
+Arguments::Arguments(int index, std::string name, std::vector<std::string> arguments, MachineState *state)
+        : index(index), name(std::move(name)), arguments(std::move(arguments)), state(state) {}
 
 size_t Arguments::size() const {
     return arguments.size();
