@@ -4,13 +4,15 @@
 
 #include "operations.h"
 #include <iostream>
+#include <exception>
+#include <fmt/core.h>
 #include "unsharp.h"
 
 using namespace vips;
 
-bool load(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void load(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <file in = 0> <slot out = 1>
-    if (!arguments.require(2)) return false;
+    arguments.require(2);
 
     const auto& file = arguments.get_string(0);
     if(file == "-") {
@@ -18,13 +20,11 @@ bool load(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     } else {
         slots[arguments.get_int(1)] = VImage::new_from_file(file.c_str());
     }
-
-    return true;
 }
 
-bool load_thumbnail(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void load_thumbnail(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <file in = 0> <slot out = 1> <width = 2> <height? = 3> <no-rotate = 4> <intent? = 5>
-    if (!arguments.require(6)) return false;
+    arguments.require(6);
 
     VipsIntent intent = VIPS_INTENT_RELATIVE;
     if (arguments.has(5)) {
@@ -38,8 +38,7 @@ bool load_thumbnail(std::map<int, vips::VImage> &slots, const Arguments &argumen
         } else if (arg == "absolute") {
             intent = VIPS_INTENT_ABSOLUTE;
         } else {
-            std::cerr << "Unrecognized intent '" << arg << "'." << std::endl;
-            return false;
+            throw std::invalid_argument(fmt::format("Unrecognized intent '{}'", arg));
         }
     }
 
@@ -61,33 +60,28 @@ bool load_thumbnail(std::map<int, vips::VImage> &slots, const Arguments &argumen
                 options
         );
     }
-
-    return true;
 }
 
-bool transform_profile(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void transform_profile(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <profile = 2>
-    if (!arguments.require(3)) return false;
+    arguments.require(3);
     slots[arguments.get_int(1)] = slots[arguments.get_int(0)].icc_transform(arguments.get_string(2).c_str());
-    return true;
 }
 
-bool unsharp(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void unsharp(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <sigma = 2> <strength = 3>
-    if (!arguments.require(4)) return false;
+    arguments.require(4);
 
     auto input = slots[arguments.get_int(0)];
     VImage blur = input.gaussblur(arguments.get_double(2));
     VipsImage *sharpened;
     unsharp(input.get_image(), blur.get_image(), &sharpened, "strength", arguments.get_double(3), NULL);
     slots[arguments.get_int(1)] = VImage(sharpened);
-
-    return true;
 }
 
-bool composite(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void composite(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <base slot = 0> <overlay slot = 1> <slot out = 2> <overlay x = 3> <overlay y = 4> <blend mode? = 5>
-    if (!arguments.require(6)) return false;
+    arguments.require(6);
 
     VipsBlendMode mode = VIPS_BLEND_MODE_OVER;
     if (arguments.has(5)) {
@@ -126,23 +120,19 @@ bool composite(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
                     ->set("x", arguments.get_int(3))
                     ->set("y", arguments.get_int(4))
     );
-
-    return true;
 }
 
-bool add_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void add_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <alpha = 2>
-    if (!arguments.require(3)) return false;
+    arguments.require(3);
 
     slots[arguments.get_int(1)] = slots[arguments.get_int(0)]
             .bandjoin_const({arguments.get_double(2)});
-
-    return true;
 }
 
-bool multiply_color(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void multiply_color(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <r = 2> <g = 3> <b = 4> <a = 5>
-    if (!arguments.require(6)) return false;
+    arguments.require(6);
 
     slots[arguments.get_int(1)] = slots[arguments.get_int(0)] * std::vector<double>{
             arguments.get_double(2),
@@ -150,25 +140,21 @@ bool multiply_color(std::map<int, vips::VImage> &slots, const Arguments &argumen
             arguments.get_double(4),
             arguments.get_double(5)
     };
-
-    return true;
 }
 
-bool scale(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void scale(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <hscale = 2> <vscale = 3>
-    if (!arguments.require(4)) return false;
+    arguments.require(4);
 
     slots[arguments.get_int(1)] = slots[arguments.get_int(0)].resize(
             arguments.get_double(2),
             VImage::option()->set("vscale", arguments.get_double(3))
     );
-
-    return true;
 }
 
-bool fit(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void fit(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <width? = 2> <height? = 3>
-    if (!arguments.require(4)) return false;
+    arguments.require(4);
 
     auto input = slots[arguments.get_int(0)];
     auto scale = -1.0;
@@ -185,13 +171,11 @@ bool fit(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     } else {
         slots[arguments.get_int(1)] = input.resize(scale, VImage::option());
     }
-
-    return true;
 }
 
-bool trim_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void trim_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <threshold = 2> <margin = 3>
-    if (!arguments.require(4)) return false;
+    arguments.require(4);
 
     auto input = slots[arguments.get_int(0)];
 
@@ -213,12 +197,11 @@ bool trim_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments) 
     if (height > input.height() - top) height = input.height() - top;
 
     slots[arguments.get_int(1)] = input.extract_area(left, top, width, height);
-    return true;
 }
 
-bool flatten(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void flatten(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <background red = 2> <background green = 3> <background blue = 4>
-    if (!arguments.require(5)) return false;
+    arguments.require(5);
 
     slots[arguments.get_int(1)] = slots[arguments.get_int(0)].flatten(
             VImage::option()
@@ -228,13 +211,11 @@ bool flatten(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
                             arguments.get_double(4)
                     })
     );
-
-    return true;
 }
 
-bool embed(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void embed(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <x = 2> <y = 3> <width = 4> <height = 5> <extend = 6> <bg red = 7> <bg green = 8> <bg blue = 9>
-    if (!arguments.require(10)) return false;
+    arguments.require(10);
 
     VipsExtend extend = VIPS_EXTEND_BACKGROUND;
     if (arguments.has(6)) {
@@ -260,39 +241,33 @@ bool embed(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
                             arguments.get_double(9)
                     })
     );
-
-    return true;
 }
 
-bool write(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void write(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <file out = 1>
-    if (!arguments.require(2)) return false;
+    arguments.require(2);
     slots[arguments.get_int(0)].write_to_file(arguments.get_string(1).c_str());
-    return true;
 }
 
-bool stream(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void stream(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot in = 0> <format = 1>
-    if (!arguments.require(2)) return false;
+    arguments.require(2);
     auto target = VTarget::new_to_descriptor(1);
     slots[arguments.get_int(0)].write_to_target(arguments.get_string(1).c_str(), target);
-    return true;
 }
 
-bool consume(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void consume(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot = 0>
-    if (!arguments.require(1)) return false;
+    arguments.require(1);
     size_t size;
     void *memory = slots[arguments.get_int(0)].write_to_memory(&size);
     g_free(memory);
-    return true;
 }
 
-bool free_slot(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void free_slot(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
     // <slot = 0>
-    if (!arguments.require(1)) return false;
+    arguments.require(1);
     slots.erase(arguments.get_int(0));
-    return true;
 }
 
 const std::map<std::string, image_operation> operations = {

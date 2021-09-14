@@ -18,6 +18,7 @@ target_link_directories(vips-tool PUBLIC /usr/local/lib /opt/homebrew/lib)
 target_link_libraries(vips-tool PUBLIC -lvips -lvips-cpp)
 
 find_package(PkgConfig REQUIRED)
+find_package(fmt REQUIRED)
 pkg_search_module(GOBJECT REQUIRED gobject-2.0)
 target_include_directories(vips-tool PRIVATE ${GOBJECT_INCLUDE_DIRS})
-target_link_libraries(vips-tool PRIVATE ${GOBJECT_LDFLAGS})
+target_link_libraries(vips-tool PRIVATE fmt::fmt ${GOBJECT_LDFLAGS})

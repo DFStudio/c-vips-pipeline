@@ -6,6 +6,8 @@
 
 #include <iostream>
 #include <utility>
+#include <exception>
+#include <fmt/core.h>
 
 Arguments::Arguments(std::string name, std::vector<std::string> arguments)
         : name(std::move(name)), arguments(std::move(arguments)) {}
@@ -14,13 +16,9 @@ size_t Arguments::size() const {
     return arguments.size();
 }
 
-bool Arguments::require(size_t count) const {
+void Arguments::require(size_t count) const {
     if(this->arguments.size() != count) {
-        std::cerr << "Error: " << this->name << " expected " << count << " arguments, got " << this->arguments.size()
-                  << std::endl;
-        return false;
-    } else {
-        return true;
+        throw std::length_error(fmt::format("Command {} expected {} arguments, got {}", this->name, count, this->arguments.size()));
     }
 }
 
@@ -36,8 +34,14 @@ const std::string& Arguments::get_string(size_t index) const {
 bool Arguments::get_bool(size_t index) const {
     if(!this->has(index))
         return false;
-    auto arg = this->get_string(index);
-    return arg == "1" || arg == "t" || arg == "true";
+    const auto &arg = this->get_string(index);
+    if(arg == "1" || arg == "t" || arg == "true") {
+        return true;
+    } else if(arg == "0" || arg == "f" || arg == "false") {
+        return false;
+    } else {
+        throw std::invalid_argument(fmt::format("Invalid value for boolean argument: '{}'", arg));
+    }
 }
 
 int Arguments::get_int(size_t index) const {
