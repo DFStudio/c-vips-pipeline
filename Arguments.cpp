@@ -48,15 +48,25 @@ int Arguments::get_int(size_t index) const {
     const auto &str = this->get_string(index);
     if(!str.empty() && str[0] == '$') {
         auto var = std::stoi(str.substr(1));
-        return this->state->get_variable(var);
+        return (int)this->state->get_variable(var);
     }
-    return std::stoi(this->get_string(index));
+    return std::stoi(str);
 }
 
 float Arguments::get_float(size_t index) const {
-    return std::stof(this->get_string(index));
+    const auto &str = this->get_string(index);
+    if(!str.empty() && str[0] == '$') {
+        auto var = std::stoi(str.substr(1));
+        return (float)this->state->get_variable(var);
+    }
+    return std::stof(str);
 }
 
 double Arguments::get_double(size_t index) const {
-    return std::stod(this->get_string(index));
+    const auto &str = this->get_string(index);
+    if(!str.empty() && str[0] == '$') {
+        auto var = std::stoi(str.substr(1));
+        return this->state->get_variable(var);
+    }
+    return std::stod(str);
 }

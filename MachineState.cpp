@@ -23,11 +23,11 @@ void MachineState::free_image(int index) {
     this->slots.erase(index);
 }
 
-void MachineState::set_variable(int index, int value) {
+void MachineState::set_variable(int index, double value) {
     this->variables[index] = value;
 }
 
-int MachineState::get_variable(int index) {
+double MachineState::get_variable(int index) {
     auto value = this->variables.find(index);
     if(value == this->variables.end())
         throw std::invalid_argument(fmt::format("No variable in slot {}", index));
