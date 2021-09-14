@@ -10,19 +10,19 @@
 
 using namespace vips;
 
-void load(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void load(MachineState *state, const Arguments &arguments) {
     // <file in = 0> <slot out = 1>
     arguments.require(2);
 
     const auto& file = arguments.get_string(0);
     if(file == "-") {
-        slots[arguments.get_int(1)] = VImage::new_from_source(VSource::new_from_descriptor(0), "");
+        state->set_image(arguments.get_int(1), VImage::new_from_source(VSource::new_from_descriptor(0), ""));
     } else {
-        slots[arguments.get_int(1)] = VImage::new_from_file(file.c_str());
+        state->set_image(arguments.get_int(1), VImage::new_from_file(file.c_str()));
     }
 }
 
-void load_thumbnail(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void load_thumbnail(MachineState *state, const Arguments &arguments) {
     // <file in = 0> <slot out = 1> <width = 2> <height? = 3> <no-rotate = 4> <intent? = 5>
     arguments.require(6);
 
@@ -48,38 +48,38 @@ void load_thumbnail(std::map<int, vips::VImage> &slots, const Arguments &argumen
 
     const auto &file = arguments.get_string(0);
     if(file == "-") {
-        slots[arguments.get_int(1)] = VImage::thumbnail_source(
+        state->set_image(arguments.get_int(1), VImage::thumbnail_source(
                 VSource::new_from_descriptor(0),
                 arguments.get_int(2),
                 options
-        );
+        ));
     } else {
-        slots[arguments.get_int(1)] = VImage::thumbnail(
+        state->set_image(arguments.get_int(1), VImage::thumbnail(
                 file.c_str(),
                 arguments.get_int(2),
                 options
-        );
+        ));
     }
 }
 
-void transform_profile(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void transform_profile(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <profile = 2>
     arguments.require(3);
-    slots[arguments.get_int(1)] = slots[arguments.get_int(0)].icc_transform(arguments.get_string(2).c_str());
+    state->set_image(arguments.get_int(1), state->get_image(arguments.get_int(0)).icc_transform(arguments.get_string(2).c_str()));
 }
 
-void unsharp(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void unsharp(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <sigma = 2> <strength = 3>
     arguments.require(4);
 
-    auto input = slots[arguments.get_int(0)];
+    auto input = state->get_image(arguments.get_int(0));
     VImage blur = input.gaussblur(arguments.get_double(2));
     VipsImage *sharpened;
     unsharp(input.get_image(), blur.get_image(), &sharpened, "strength", arguments.get_double(3), NULL);
-    slots[arguments.get_int(1)] = VImage(sharpened);
+    state->set_image(arguments.get_int(1), VImage(sharpened));
 }
 
-void composite(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void composite(MachineState *state, const Arguments &arguments) {
     // <base slot = 0> <overlay slot = 1> <slot out = 2> <overlay x = 3> <overlay y = 4> <blend mode? = 5>
     arguments.require(6);
 
@@ -113,50 +113,50 @@ void composite(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
         else if (arg == "exclusion") mode = VIPS_BLEND_MODE_EXCLUSION;
     }
 
-    slots[arguments.get_int(2)] = slots[arguments.get_int(0)].composite2(
-            slots[arguments.get_int(1)],
+    state->set_image(arguments.get_int(2), state->get_image(arguments.get_int(0)).composite2(
+            state->get_image(arguments.get_int(1)),
             mode,
             VImage::option()
                     ->set("x", arguments.get_int(3))
                     ->set("y", arguments.get_int(4))
-    );
+    ));
 }
 
-void add_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void add_alpha(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <alpha = 2>
     arguments.require(3);
 
-    slots[arguments.get_int(1)] = slots[arguments.get_int(0)]
-            .bandjoin_const({arguments.get_double(2)});
+    state->set_image(arguments.get_int(1), state->get_image(arguments.get_int(0))
+            .bandjoin_const({arguments.get_double(2)}));
 }
 
-void multiply_color(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void multiply_color(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <r = 2> <g = 3> <b = 4> <a = 5>
     arguments.require(6);
 
-    slots[arguments.get_int(1)] = slots[arguments.get_int(0)] * std::vector<double>{
+    state->set_image(arguments.get_int(1), state->get_image(arguments.get_int(0)) * std::vector<double>{
             arguments.get_double(2),
             arguments.get_double(3),
             arguments.get_double(4),
             arguments.get_double(5)
-    };
+    });
 }
 
-void scale(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void scale(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <hscale = 2> <vscale = 3>
     arguments.require(4);
 
-    slots[arguments.get_int(1)] = slots[arguments.get_int(0)].resize(
+    state->set_image(arguments.get_int(1), state->get_image(arguments.get_int(0)).resize(
             arguments.get_double(2),
             VImage::option()->set("vscale", arguments.get_double(3))
-    );
+    ));
 }
 
-void fit(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void fit(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <width? = 2> <height? = 3>
     arguments.require(4);
 
-    auto input = slots[arguments.get_int(0)];
+    auto input = state->get_image(arguments.get_int(0));
     auto scale = -1.0;
     if (arguments.has(2)) {
         scale = arguments.get_double(2) / input.width();
@@ -167,17 +167,17 @@ void fit(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
             scale = vscale;
     }
     if (scale < 0) {
-        slots[arguments.get_int(1)] = input.copy();
+        state->set_image(arguments.get_int(1), input.copy());
     } else {
-        slots[arguments.get_int(1)] = input.resize(scale, VImage::option());
+        state->set_image(arguments.get_int(1), input.resize(scale, VImage::option()));
     }
 }
 
-void trim_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void trim_alpha(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <threshold = 2> <margin = 3>
     arguments.require(4);
 
-    auto input = slots[arguments.get_int(0)];
+    auto input = state->get_image(arguments.get_int(0));
 
     auto alpha = input.extract_band(3);
     int left, top, width, height;
@@ -196,24 +196,24 @@ void trim_alpha(std::map<int, vips::VImage> &slots, const Arguments &arguments) 
     if (height < 1) height = 1;
     if (height > input.height() - top) height = input.height() - top;
 
-    slots[arguments.get_int(1)] = input.extract_area(left, top, width, height);
+    state->set_image(arguments.get_int(1), input.extract_area(left, top, width, height));
 }
 
-void flatten(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void flatten(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <background red = 2> <background green = 3> <background blue = 4>
     arguments.require(5);
 
-    slots[arguments.get_int(1)] = slots[arguments.get_int(0)].flatten(
+    state->set_image(arguments.get_int(1), state->get_image(arguments.get_int(0)).flatten(
             VImage::option()
                     ->set("background", std::vector<double>{
                             arguments.get_double(2),
                             arguments.get_double(3),
                             arguments.get_double(4)
                     })
-    );
+    ));
 }
 
-void embed(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void embed(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <x = 2> <y = 3> <width = 4> <height = 5> <extend = 6> <bg red = 7> <bg green = 8> <bg blue = 9>
     arguments.require(10);
 
@@ -228,7 +228,7 @@ void embed(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
         else if (arg == "background") extend = VIPS_EXTEND_BACKGROUND;
     }
 
-    slots[arguments.get_int(1)] = slots[arguments.get_int(0)].embed(
+    state->set_image(arguments.get_int(1), state->get_image(arguments.get_int(0)).embed(
             arguments.get_int(2),
             arguments.get_int(3),
             arguments.get_int(4),
@@ -240,34 +240,58 @@ void embed(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
                             arguments.get_double(8),
                             arguments.get_double(9)
                     })
-    );
+    ));
 }
 
-void write(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void write(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <file out = 1>
     arguments.require(2);
-    slots[arguments.get_int(0)].write_to_file(arguments.get_string(1).c_str());
+    state->get_image(arguments.get_int(0)).write_to_file(arguments.get_string(1).c_str());
 }
 
-void stream(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void stream(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <format = 1>
     arguments.require(2);
     auto target = VTarget::new_to_descriptor(1);
-    slots[arguments.get_int(0)].write_to_target(arguments.get_string(1).c_str(), target);
+    state->get_image(arguments.get_int(0)).write_to_target(arguments.get_string(1).c_str(), target);
 }
 
-void consume(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void consume(MachineState *state, const Arguments &arguments) {
     // <slot = 0>
     arguments.require(1);
     size_t size;
-    void *memory = slots[arguments.get_int(0)].write_to_memory(&size);
+    void *memory = state->get_image(arguments.get_int(0)).write_to_memory(&size);
     g_free(memory);
 }
 
-void free_slot(std::map<int, vips::VImage> &slots, const Arguments &arguments) {
+void free_slot(MachineState *state, const Arguments &arguments) {
     // <slot = 0>
     arguments.require(1);
-    slots.erase(arguments.get_int(0));
+    state->free_image(arguments.get_int(0));
+}
+
+void get_metric(MachineState *state, const Arguments &arguments) {
+    // <slot = 0> <metric = 1> <var = 2>
+    arguments.require(3);
+
+    int value;
+    auto image = state->get_image(arguments.get_int(0));
+    const auto &metric = arguments.get_string(1);
+    if(metric == "width") {
+        value = image.width();
+    } else if(metric == "height") {
+        value = image.height();
+    } else {
+        throw std::invalid_argument(fmt::format("Invalid metric '{}'", metric));
+    }
+    state->set_variable(arguments.get_int(2), value);
+}
+
+void set_var(MachineState *state, const Arguments &arguments) {
+    // <var = 0> <value = 1>
+    arguments.require(2);
+
+    state->set_variable(arguments.get_int(0), arguments.get_int(1));
 }
 
 const std::map<std::string, image_operation> operations = {
@@ -286,7 +310,10 @@ const std::map<std::string, image_operation> operations = {
         {"stream",         stream},
         {"write",          write},
         {"consume",        consume},
-        {"free",           free_slot}
+        {"free",           free_slot},
+
+        {"get_metric",     get_metric},
+        {"set_var",        set_var},
 };
 
 image_operation get_operation(const std::string &name) {

@@ -7,13 +7,15 @@
 
 #include <string>
 #include <vector>
+#include "MachineState.h"
 
 class Arguments {
     std::vector<std::string> arguments;
+    MachineState *state;
 public:
     const std::string name;
 
-    explicit Arguments(std::string name, std::vector<std::string> arguments);
+    explicit Arguments(std::string name, std::vector<std::string> arguments, MachineState *state);
 
     void require(size_t count) const;
     [[nodiscard]] size_t size() const;

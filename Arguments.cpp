@@ -9,8 +9,8 @@
 #include <exception>
 #include <fmt/core.h>
 
-Arguments::Arguments(std::string name, std::vector<std::string> arguments)
-        : name(std::move(name)), arguments(std::move(arguments)) {}
+Arguments::Arguments(std::string name, std::vector<std::string> arguments, MachineState *state)
+        : name(std::move(name)), arguments(std::move(arguments)), state(state) {}
 
 size_t Arguments::size() const {
     return arguments.size();
@@ -45,6 +45,11 @@ bool Arguments::get_bool(size_t index) const {
 }
 
 int Arguments::get_int(size_t index) const {
+    const auto &str = this->get_string(index);
+    if(!str.empty() && str[0] == '$') {
+        auto var = std::stoi(str.substr(1));
+        return this->state->get_variable(var);
+    }
     return std::stoi(this->get_string(index));
 }
 

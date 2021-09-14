@@ -10,11 +10,12 @@
 #include <vips/vips.h>
 #include <vips/vips8>
 #include "Arguments.h"
+#include "MachineState.h"
 
 /**
  * Returns true if the operation was successful. Returning false aborts.
  */
-typedef void (*image_operation)(std::map<int, vips::VImage> &slots, const Arguments &arguments);
+typedef void (*image_operation)(MachineState *state, const Arguments &arguments);
 
 image_operation get_operation(const std::string &name);
 

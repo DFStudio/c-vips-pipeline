@@ -30,9 +30,11 @@ For optional values, an underscore (`_`) represents no value.
 @trim_alpha <slot in> <slot out> <threshold> <margin>
 @multiply_color <slot in> <slot out> <r> <g> <b> <a>
 
-@mime_jpeg <slot>
-@mime_webp <slot>
+@stream <slot> <format>
 @write <slot in> <file out>
 @consume <slot>
 @free <slot>
+
+@get_metric <slot> <metric> <var>
+@set_var <var> <value>
 ```
