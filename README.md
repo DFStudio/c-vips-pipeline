@@ -12,7 +12,10 @@ dramatically.
 
 ## Commands
 
-For optional values, an underscore (`_`) represents no value.
+- For optional values, an underscore (`_`) represents no value.
+- Any numeric parameter can be defined using a variable or expression by prefixing it with a `%`. Expressions are evaluated using [ExprTk](https://github.com/ArashPartow/exprtk).
+- Variables are all internally represented with 64-bit floating point numbers
+- Slots and variables use string keys
 
 ```
 @thumbnail <file in> <slot out> <width> <height?> <no-rotate> <intent?>
@@ -35,6 +38,11 @@ For optional values, an underscore (`_`) represents no value.
 @consume <slot>
 @free <slot>
 
-@get_metric <slot> <metric> <var>
 @set_var <var> <value>
+```
+
+Additional expression functions:
+```
+vips_width('name')
+vips_height('name')
 ```

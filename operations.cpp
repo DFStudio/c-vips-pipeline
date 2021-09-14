@@ -16,9 +16,9 @@ void load(MachineState *state, const Arguments &arguments) {
 
     const auto& file = arguments.get_string(0);
     if(file == "-") {
-        state->set_image(arguments.get_int(1), VImage::new_from_source(VSource::new_from_descriptor(0), ""));
+        state->set_image(arguments.get_string(1), VImage::new_from_source(VSource::new_from_descriptor(0), ""));
     } else {
-        state->set_image(arguments.get_int(1), VImage::new_from_file(file.c_str()));
+        state->set_image(arguments.get_string(1), VImage::new_from_file(file.c_str()));
     }
 }
 
@@ -48,13 +48,13 @@ void load_thumbnail(MachineState *state, const Arguments &arguments) {
 
     const auto &file = arguments.get_string(0);
     if(file == "-") {
-        state->set_image(arguments.get_int(1), VImage::thumbnail_source(
+        state->set_image(arguments.get_string(1), VImage::thumbnail_source(
                 VSource::new_from_descriptor(0),
                 arguments.get_int(2),
                 options
         ));
     } else {
-        state->set_image(arguments.get_int(1), VImage::thumbnail(
+        state->set_image(arguments.get_string(1), VImage::thumbnail(
                 file.c_str(),
                 arguments.get_int(2),
                 options
@@ -65,18 +65,18 @@ void load_thumbnail(MachineState *state, const Arguments &arguments) {
 void transform_profile(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <profile = 2>
     arguments.require(3);
-    state->set_image(arguments.get_int(1), state->get_image(arguments.get_int(0)).icc_transform(arguments.get_string(2).c_str()));
+    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).icc_transform(arguments.get_string(2).c_str()));
 }
 
 void unsharp(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <sigma = 2> <strength = 3>
     arguments.require(4);
 
-    auto input = state->get_image(arguments.get_int(0));
+    auto input = state->get_image(arguments.get_string(0));
     VImage blur = input.gaussblur(arguments.get_double(2));
     VipsImage *sharpened;
     unsharp(input.get_image(), blur.get_image(), &sharpened, "strength", arguments.get_double(3), NULL);
-    state->set_image(arguments.get_int(1), VImage(sharpened));
+    state->set_image(arguments.get_string(1), VImage(sharpened));
 }
 
 void composite(MachineState *state, const Arguments &arguments) {
@@ -113,8 +113,8 @@ void composite(MachineState *state, const Arguments &arguments) {
         else if (arg == "exclusion") mode = VIPS_BLEND_MODE_EXCLUSION;
     }
 
-    state->set_image(arguments.get_int(2), state->get_image(arguments.get_int(0)).composite2(
-            state->get_image(arguments.get_int(1)),
+    state->set_image(arguments.get_string(2), state->get_image(arguments.get_string(0)).composite2(
+            state->get_image(arguments.get_string(1)),
             mode,
             VImage::option()
                     ->set("x", arguments.get_int(3))
@@ -126,7 +126,7 @@ void add_alpha(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <alpha = 2>
     arguments.require(3);
 
-    state->set_image(arguments.get_int(1), state->get_image(arguments.get_int(0))
+    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0))
             .bandjoin_const({arguments.get_double(2)}));
 }
 
@@ -134,7 +134,7 @@ void multiply_color(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <r = 2> <g = 3> <b = 4> <a = 5>
     arguments.require(6);
 
-    state->set_image(arguments.get_int(1), state->get_image(arguments.get_int(0)) * std::vector<double>{
+    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)) * std::vector<double>{
             arguments.get_double(2),
             arguments.get_double(3),
             arguments.get_double(4),
@@ -146,7 +146,7 @@ void scale(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <hscale = 2> <vscale = 3>
     arguments.require(4);
 
-    state->set_image(arguments.get_int(1), state->get_image(arguments.get_int(0)).resize(
+    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).resize(
             arguments.get_double(2),
             VImage::option()->set("vscale", arguments.get_double(3))
     ));
@@ -156,7 +156,7 @@ void fit(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <width? = 2> <height? = 3>
     arguments.require(4);
 
-    auto input = state->get_image(arguments.get_int(0));
+    auto input = state->get_image(arguments.get_string(0));
     auto scale = -1.0;
     if (arguments.has(2)) {
         scale = arguments.get_double(2) / input.width();
@@ -167,9 +167,9 @@ void fit(MachineState *state, const Arguments &arguments) {
             scale = vscale;
     }
     if (scale < 0) {
-        state->set_image(arguments.get_int(1), input.copy());
+        state->set_image(arguments.get_string(1), input.copy());
     } else {
-        state->set_image(arguments.get_int(1), input.resize(scale, VImage::option()));
+        state->set_image(arguments.get_string(1), input.resize(scale, VImage::option()));
     }
 }
 
@@ -177,7 +177,7 @@ void trim_alpha(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <threshold = 2> <margin = 3>
     arguments.require(4);
 
-    auto input = state->get_image(arguments.get_int(0));
+    auto input = state->get_image(arguments.get_string(0));
 
     auto alpha = input.extract_band(3);
     int left, top, width, height;
@@ -196,14 +196,14 @@ void trim_alpha(MachineState *state, const Arguments &arguments) {
     if (height < 1) height = 1;
     if (height > input.height() - top) height = input.height() - top;
 
-    state->set_image(arguments.get_int(1), input.extract_area(left, top, width, height));
+    state->set_image(arguments.get_string(1), input.extract_area(left, top, width, height));
 }
 
 void flatten(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <background red = 2> <background green = 3> <background blue = 4>
     arguments.require(5);
 
-    state->set_image(arguments.get_int(1), state->get_image(arguments.get_int(0)).flatten(
+    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).flatten(
             VImage::option()
                     ->set("background", std::vector<double>{
                             arguments.get_double(2),
@@ -228,7 +228,7 @@ void embed(MachineState *state, const Arguments &arguments) {
         else if (arg == "background") extend = VIPS_EXTEND_BACKGROUND;
     }
 
-    state->set_image(arguments.get_int(1), state->get_image(arguments.get_int(0)).embed(
+    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).embed(
             arguments.get_int(2),
             arguments.get_int(3),
             arguments.get_int(4),
@@ -246,52 +246,35 @@ void embed(MachineState *state, const Arguments &arguments) {
 void write(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <file out = 1>
     arguments.require(2);
-    state->get_image(arguments.get_int(0)).write_to_file(arguments.get_string(1).c_str());
+    state->get_image(arguments.get_string(0)).write_to_file(arguments.get_string(1).c_str());
 }
 
 void stream(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <format = 1>
     arguments.require(2);
     auto target = VTarget::new_to_descriptor(1);
-    state->get_image(arguments.get_int(0)).write_to_target(arguments.get_string(1).c_str(), target);
+    state->get_image(arguments.get_string(0)).write_to_target(arguments.get_string(1).c_str(), target);
 }
 
 void consume(MachineState *state, const Arguments &arguments) {
     // <slot = 0>
     arguments.require(1);
     size_t size;
-    void *memory = state->get_image(arguments.get_int(0)).write_to_memory(&size);
+    void *memory = state->get_image(arguments.get_string(0)).write_to_memory(&size);
     g_free(memory);
 }
 
 void free_slot(MachineState *state, const Arguments &arguments) {
     // <slot = 0>
     arguments.require(1);
-    state->free_image(arguments.get_int(0));
-}
-
-void get_metric(MachineState *state, const Arguments &arguments) {
-    // <slot = 0> <metric = 1> <var = 2>
-    arguments.require(3);
-
-    int value;
-    auto image = state->get_image(arguments.get_int(0));
-    const auto &metric = arguments.get_string(1);
-    if(metric == "width") {
-        value = image.width();
-    } else if(metric == "height") {
-        value = image.height();
-    } else {
-        throw std::invalid_argument(fmt::format("Invalid metric '{}'", metric));
-    }
-    state->set_variable(arguments.get_int(2), value);
+    state->free_image(arguments.get_string(0));
 }
 
 void set_var(MachineState *state, const Arguments &arguments) {
     // <var = 0> <value = 1>
     arguments.require(2);
 
-    state->set_variable(arguments.get_int(0), arguments.get_int(1));
+    state->set_variable(arguments.get_string(0), arguments.get_double(1));
 }
 
 const std::map<std::string, image_operation> operations = {
@@ -312,11 +295,31 @@ const std::map<std::string, image_operation> operations = {
         {"consume",        consume},
         {"free",           free_slot},
 
-        {"get_metric",     get_metric},
         {"set_var",        set_var},
 };
 
 image_operation get_operation(const std::string &name) {
     return operations.at(name);
+}
+
+struct ImageFunction : public double_function
+{
+    typedef double (*callback_t)(const vips::VImage &);
+    MachineState *state;
+    callback_t callback;
+
+    ImageFunction(MachineState *state, callback_t callback) : state(state), callback(callback), double_function("S"){}
+
+    inline double operator()(double_function::parameter_list_t parameters) override {
+        double_string_t name_view(parameters[0]);
+        std::string name(name_view.begin(), name_view.size());
+        auto image = state->get_image(name);
+        return callback(image);
+    }
+};
+
+void initialize_functions(MachineState *state) {
+    state->add_function("vips_width", new ImageFunction(state, [](auto image) { return (double)image.width(); }));
+    state->add_function("vips_height", new ImageFunction(state, [](auto image) { return (double)image.height(); }));
 }
 

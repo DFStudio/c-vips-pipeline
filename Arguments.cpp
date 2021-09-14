@@ -46,27 +46,24 @@ bool Arguments::get_bool(size_t index) const {
 
 int Arguments::get_int(size_t index) const {
     const auto &str = this->get_string(index);
-    if(!str.empty() && str[0] == '$') {
-        auto var = std::stoi(str.substr(1));
-        return (int)this->state->get_variable(var);
+    if(!str.empty() && str[0] == '%') {
+        return (int)this->state->eval(str.substr(1));
     }
     return std::stoi(str);
 }
 
 float Arguments::get_float(size_t index) const {
     const auto &str = this->get_string(index);
-    if(!str.empty() && str[0] == '$') {
-        auto var = std::stoi(str.substr(1));
-        return (float)this->state->get_variable(var);
+    if(!str.empty() && str[0] == '%') {
+        return (float)this->state->eval(str.substr(1));
     }
     return std::stof(str);
 }
 
 double Arguments::get_double(size_t index) const {
     const auto &str = this->get_string(index);
-    if(!str.empty() && str[0] == '$') {
-        auto var = std::stoi(str.substr(1));
-        return this->state->get_variable(var);
+    if(!str.empty() && str[0] == '%') {
+        return (double)this->state->eval(str.substr(1));
     }
     return std::stod(str);
 }

@@ -17,6 +17,7 @@
  */
 typedef void (*image_operation)(MachineState *state, const Arguments &arguments);
 
+void initialize_functions(MachineState *state);
 image_operation get_operation(const std::string &name);
 
 #endif //VIPS_SCALE_OPERATIONS_H

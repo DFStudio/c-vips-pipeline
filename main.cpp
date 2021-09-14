@@ -18,6 +18,8 @@ int main(int argc, char **argv) {
     unsharp_get_type();
 
     MachineState state;
+    initialize_functions(&state);
+
     std::vector<Arguments> commands;
     std::string current_name;
     std::vector<std::string> current_command;

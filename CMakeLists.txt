@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(vips-tool main.cpp unsharp.c unsharp.h operations.cpp operations.h Arguments.cpp Arguments.h MachineState.cpp MachineState.h)
 
+target_include_directories(vips-tool PRIVATE include)
 target_include_directories(vips-tool SYSTEM PUBLIC /usr/local/include /opt/homebrew/include)
 target_link_directories(vips-tool PUBLIC /usr/local/lib /opt/homebrew/lib)
 
