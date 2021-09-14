@@ -15,13 +15,14 @@ public:
 
     explicit Arguments(std::string name, std::vector<std::string> arguments);
 
-    bool require(int count) const;
-    bool has(int index) const;
-    const std::string& get_string(int index) const;
-    bool get_bool(int index) const;
-    int get_int(int index) const;
-    float get_float(int index) const;
-    double get_double(int index) const;
+    size_t size() const;
+    bool require(size_t count) const;
+    bool has(size_t index) const;
+    const std::string& get_string(size_t index) const;
+    bool get_bool(size_t index) const;
+    int get_int(size_t index) const;
+    float get_float(size_t index) const;
+    double get_double(size_t index) const;
 };
 
 
