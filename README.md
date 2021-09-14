@@ -37,6 +37,7 @@ dramatically.
 @write <slot in> <file out>
 @consume <slot>
 @free <slot>
+@copy_slot <source slot> <dest slot>
 
 @set_var <var> <value>
 ```

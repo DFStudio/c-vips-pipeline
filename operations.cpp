@@ -270,6 +270,12 @@ void free_slot(MachineState *state, const Arguments &arguments) {
     state->free_image(arguments.get_string(0));
 }
 
+void copy_slot(MachineState *state, const Arguments &arguments) {
+    // <source slot = 0> <dest slot = 1>
+    arguments.require(2);
+    state->set_image(arguments.get_string(0), state->get_image(arguments.get_string(1)));
+}
+
 void set_var(MachineState *state, const Arguments &arguments) {
     // <var = 0> <value = 1>
     arguments.require(2);
@@ -294,6 +300,7 @@ const std::map<std::string, image_operation> operations = {
         {"write",          write},
         {"consume",        consume},
         {"free",           free_slot},
+        {"copy_slot",      copy_slot},
 
         {"set_var",        set_var},
 };
