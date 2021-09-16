@@ -24,11 +24,12 @@ dramatically.
 
 @load <file in> <slot out>
 @composite <base slot> <overlay slot> <slot out> <overlay x> <overlay y> <blend mode>
-@embed <slot in> <slot out> <x> <y> <width> <height> <extend> <bg red> <bg green> <bg blue>
+@embed <slot in> <slot out> <x> <y> <width> <height> <extend> <bg red> <bg green> <bg blue> <bg alpha>
  
 @flatten <slot in> <slot out> <background red> <background green> <background blue>
-@add_alpha <slot in> <slot out>
+@add_alpha <slot in> <slot out> <alpha>
 @scale <slot in> <slot out> <hscale> <vscale>
+@affine <slot in> <slot out> <m00> <m01> <tx> <m10> <m11> <ty>
 @fit <slot in> <slot out> <width?> <height?>
 @trim_alpha <slot in> <slot out> <threshold> <margin>
 @multiply_color <slot in> <slot out> <r> <g> <b> <a>

@@ -4,11 +4,67 @@
 
 #include "operations.h"
 #include <iostream>
+#include <limits>
 #include <exception>
 #include <fmt/core.h>
 #include "unsharp.h"
 
 using namespace vips;
+
+std::vector<double> trim_bands(int bands, std::vector<double> components) {
+    std::vector<double> out;
+    for(int i = 0; i < bands && i < components.size(); i++) {
+        out.push_back(components[i]);
+    }
+    return out;
+}
+
+VipsExtend parse_extend(const std::string &arg) {
+    if (arg == "black") return VIPS_EXTEND_BLACK;
+    if (arg == "copy") return VIPS_EXTEND_COPY;
+    if (arg == "repeat") return VIPS_EXTEND_REPEAT;
+    if (arg == "mirror") return VIPS_EXTEND_MIRROR;
+    if (arg == "white") return VIPS_EXTEND_WHITE;
+    if (arg == "background") return VIPS_EXTEND_BACKGROUND;
+    throw std::invalid_argument(fmt::format("Unrecognized extend mode '{}'", arg));
+}
+
+VipsIntent parse_intent(const std::string &arg) {
+    if (arg == "perceptual") return VIPS_INTENT_PERCEPTUAL;
+    if (arg == "relative") return VIPS_INTENT_RELATIVE;
+    if (arg == "saturation") return VIPS_INTENT_SATURATION;
+    if (arg == "absolute") return VIPS_INTENT_ABSOLUTE;
+    throw std::invalid_argument(fmt::format("Unrecognized intent '{}'", arg));
+}
+
+VipsBlendMode parse_blend_mode(const std::string &arg) {
+    if (arg == "clear") return VIPS_BLEND_MODE_CLEAR;
+    if (arg == "source") return VIPS_BLEND_MODE_SOURCE;
+    if (arg == "over") return VIPS_BLEND_MODE_OVER;
+    if (arg == "in") return VIPS_BLEND_MODE_IN;
+    if (arg == "out") return VIPS_BLEND_MODE_OUT;
+    if (arg == "atop") return VIPS_BLEND_MODE_ATOP;
+    if (arg == "dest") return VIPS_BLEND_MODE_DEST;
+    if (arg == "dest_over") return VIPS_BLEND_MODE_DEST_OVER;
+    if (arg == "dest_in") return VIPS_BLEND_MODE_DEST_IN;
+    if (arg == "dest_out") return VIPS_BLEND_MODE_DEST_OUT;
+    if (arg == "dest_atop") return VIPS_BLEND_MODE_DEST_ATOP;
+    if (arg == "xor") return VIPS_BLEND_MODE_XOR;
+    if (arg == "add") return VIPS_BLEND_MODE_ADD;
+    if (arg == "saturate") return VIPS_BLEND_MODE_SATURATE;
+    if (arg == "multiply") return VIPS_BLEND_MODE_MULTIPLY;
+    if (arg == "screen") return VIPS_BLEND_MODE_SCREEN;
+    if (arg == "overlay") return VIPS_BLEND_MODE_OVERLAY;
+    if (arg == "darken") return VIPS_BLEND_MODE_DARKEN;
+    if (arg == "lighten") return VIPS_BLEND_MODE_LIGHTEN;
+    if (arg == "colour_dodge") return VIPS_BLEND_MODE_COLOUR_DODGE;
+    if (arg == "colour_burn") return VIPS_BLEND_MODE_COLOUR_BURN;
+    if (arg == "hard_light") return VIPS_BLEND_MODE_HARD_LIGHT;
+    if (arg == "soft_light") return VIPS_BLEND_MODE_SOFT_LIGHT;
+    if (arg == "difference") return VIPS_BLEND_MODE_DIFFERENCE;
+    if (arg == "exclusion") return VIPS_BLEND_MODE_EXCLUSION;
+    throw std::invalid_argument(fmt::format("Unrecognized blend mode '{}'", arg));
+}
 
 void load(MachineState *state, const Arguments &arguments) {
     // <file in = 0> <slot out = 1>
@@ -28,18 +84,7 @@ void load_thumbnail(MachineState *state, const Arguments &arguments) {
 
     VipsIntent intent = VIPS_INTENT_RELATIVE;
     if (arguments.has(5)) {
-        auto arg = arguments.get_string(5);
-        if (arg == "perceptual") {
-            intent = VIPS_INTENT_PERCEPTUAL;
-        } else if (arg == "relative") {
-            intent = VIPS_INTENT_RELATIVE;
-        } else if (arg == "saturation") {
-            intent = VIPS_INTENT_SATURATION;
-        } else if (arg == "absolute") {
-            intent = VIPS_INTENT_ABSOLUTE;
-        } else {
-            throw std::invalid_argument(fmt::format("Unrecognized intent '{}'", arg));
-        }
+        intent = parse_intent(arguments.get_string(5));
     }
 
     VOption *options = VImage::option()->set("no_rotate", arguments.get_bool(4))->set("intent", intent);
@@ -85,32 +130,7 @@ void composite(MachineState *state, const Arguments &arguments) {
 
     VipsBlendMode mode = VIPS_BLEND_MODE_OVER;
     if (arguments.has(5)) {
-        auto &arg = arguments.get_string(5);
-        if (arg == "clear") mode = VIPS_BLEND_MODE_CLEAR;
-        else if (arg == "source") mode = VIPS_BLEND_MODE_SOURCE;
-        else if (arg == "over") mode = VIPS_BLEND_MODE_OVER;
-        else if (arg == "in") mode = VIPS_BLEND_MODE_IN;
-        else if (arg == "out") mode = VIPS_BLEND_MODE_OUT;
-        else if (arg == "atop") mode = VIPS_BLEND_MODE_ATOP;
-        else if (arg == "dest") mode = VIPS_BLEND_MODE_DEST;
-        else if (arg == "dest_over") mode = VIPS_BLEND_MODE_DEST_OVER;
-        else if (arg == "dest_in") mode = VIPS_BLEND_MODE_DEST_IN;
-        else if (arg == "dest_out") mode = VIPS_BLEND_MODE_DEST_OUT;
-        else if (arg == "dest_atop") mode = VIPS_BLEND_MODE_DEST_ATOP;
-        else if (arg == "xor") mode = VIPS_BLEND_MODE_XOR;
-        else if (arg == "add") mode = VIPS_BLEND_MODE_ADD;
-        else if (arg == "saturate") mode = VIPS_BLEND_MODE_SATURATE;
-        else if (arg == "multiply") mode = VIPS_BLEND_MODE_MULTIPLY;
-        else if (arg == "screen") mode = VIPS_BLEND_MODE_SCREEN;
-        else if (arg == "overlay") mode = VIPS_BLEND_MODE_OVERLAY;
-        else if (arg == "darken") mode = VIPS_BLEND_MODE_DARKEN;
-        else if (arg == "lighten") mode = VIPS_BLEND_MODE_LIGHTEN;
-        else if (arg == "colour_dodge") mode = VIPS_BLEND_MODE_COLOUR_DODGE;
-        else if (arg == "colour_burn") mode = VIPS_BLEND_MODE_COLOUR_BURN;
-        else if (arg == "hard_light") mode = VIPS_BLEND_MODE_HARD_LIGHT;
-        else if (arg == "soft_light") mode = VIPS_BLEND_MODE_SOFT_LIGHT;
-        else if (arg == "difference") mode = VIPS_BLEND_MODE_DIFFERENCE;
-        else if (arg == "exclusion") mode = VIPS_BLEND_MODE_EXCLUSION;
+        mode = parse_blend_mode(arguments.get_string(5));
     }
 
     state->set_image(arguments.get_string(2), state->get_image(arguments.get_string(0)).composite2(
@@ -126,20 +146,64 @@ void add_alpha(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <alpha = 2>
     arguments.require(3);
 
-    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0))
-            .bandjoin_const({arguments.get_double(2)}));
+    auto input_image = state->get_image(arguments.get_string(0));
+    if(input_image.bands() == 4)
+        state->set_image(arguments.get_string(1), input_image);
+    else
+        state->set_image(arguments.get_string(1), input_image
+                .bandjoin_const({arguments.get_double(2)}));
 }
 
 void multiply_color(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <r = 2> <g = 3> <b = 4> <a = 5>
     arguments.require(6);
+    auto input_image = state->get_image(arguments.get_string(0));
 
-    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)) * std::vector<double>{
-            arguments.get_double(2),
-            arguments.get_double(3),
-            arguments.get_double(4),
-            arguments.get_double(5)
-    });
+    double max;
+    switch(input_image.format()) {
+        case VIPS_FORMAT_NOTSET:
+            max = 0;
+            break;
+        case VIPS_FORMAT_UCHAR:
+            max = std::numeric_limits<unsigned char>::max();
+            break;
+        case VIPS_FORMAT_CHAR:
+            max = std::numeric_limits<char>::max();
+            break;
+        case VIPS_FORMAT_USHORT:
+            max = std::numeric_limits<unsigned short>::max();
+            break;
+        case VIPS_FORMAT_SHORT:
+            max = std::numeric_limits<short>::max();
+            break;
+        case VIPS_FORMAT_UINT:
+            max = std::numeric_limits<unsigned int>::max();
+            break;
+        case VIPS_FORMAT_INT:
+            max = std::numeric_limits<int>::max();
+            break;
+        case VIPS_FORMAT_FLOAT:
+            max = 1.0; // is this true? are there float images with ranges beyond 0-1? is this even relevant?
+            break;
+        case VIPS_FORMAT_COMPLEX:
+            max = 0;
+            break;
+        case VIPS_FORMAT_DOUBLE:
+            max = 1.0;
+            break;
+        case VIPS_FORMAT_DPCOMPLEX:
+            max = 0;
+            break;
+        case VIPS_FORMAT_LAST:
+            break;
+    }
+
+    state->set_image(arguments.get_string(1), input_image * trim_bands(input_image.bands(), {
+            arguments.get_double(2) * max,
+            arguments.get_double(3) * max,
+            arguments.get_double(4) * max,
+            arguments.get_double(5) * max
+    }));
 }
 
 void scale(MachineState *state, const Arguments &arguments) {
@@ -149,6 +213,24 @@ void scale(MachineState *state, const Arguments &arguments) {
     state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).resize(
             arguments.get_double(2),
             VImage::option()->set("vscale", arguments.get_double(3))
+    ));
+}
+
+void affine(MachineState *state, const Arguments &arguments) {
+    // <slot in = 0> <slot out = 1> <m00 = 2> <m01 = 3> <tx = 4> <m10 = 5> <m11 = 6> <ty = 7>
+    arguments.require(8);
+
+    auto input_image = state->get_image(arguments.get_string(0));
+    state->set_image(arguments.get_string(1), input_image.affine(
+            {
+                    arguments.get_double(2),
+                    arguments.get_double(3),
+                    arguments.get_double(5),
+                    arguments.get_double(6),
+            },
+            VImage::option()
+                    ->set("odx", arguments.get_double(4))
+                    ->set("ody", arguments.get_double(7))
     ));
 }
 
@@ -219,22 +301,9 @@ void embed(MachineState *state, const Arguments &arguments) {
 
     VipsExtend extend = VIPS_EXTEND_BACKGROUND;
     if (arguments.has(6)) {
-        auto &arg = arguments.get_string(6);
-        if (arg == "black") extend = VIPS_EXTEND_BLACK;
-        else if (arg == "copy") extend = VIPS_EXTEND_COPY;
-        else if (arg == "repeat") extend = VIPS_EXTEND_REPEAT;
-        else if (arg == "mirror") extend = VIPS_EXTEND_MIRROR;
-        else if (arg == "white") extend = VIPS_EXTEND_WHITE;
-        else if (arg == "background") extend = VIPS_EXTEND_BACKGROUND;
+        extend = parse_extend(arguments.get_string(6));
     }
-    std::vector<double> bg {
-            arguments.get_double(7),
-            arguments.get_double(8),
-            arguments.get_double(9)
-    };
     auto input_image = state->get_image(arguments.get_string(0));
-    if(input_image.bands() == 4)
-        bg.push_back(arguments.get_double(10));
     state->set_image(arguments.get_string(1), input_image.embed(
             arguments.get_int(2),
             arguments.get_int(3),
@@ -242,7 +311,12 @@ void embed(MachineState *state, const Arguments &arguments) {
             arguments.get_int(5),
             VImage::option()
                     ->set("extend", extend)
-                    ->set("background", bg)
+                    ->set("background", trim_bands(input_image.bands(), {
+                            arguments.get_double(7),
+                            arguments.get_double(8),
+                            arguments.get_double(9),
+                            arguments.get_double(10),
+                    }))
     ));
 }
 
@@ -296,6 +370,7 @@ const std::map<std::string, image_operation> operations = {
         {"flatten",        flatten},
         {"add_alpha",      add_alpha},
         {"scale",          scale},
+        {"affine",         affine},
         {"fit",            fit},
         {"trim_alpha",     trim_alpha},
         {"multiply_color", multiply_color},
