@@ -9,3 +9,21 @@ or `vips` is: (1) `vipsthumbnail` does not provide control over the sharpening u
 its output thumbnails, and (2) the `vips` CLI requires creating intermediate files on disk in
 order to make multiple calls to the VIPS API, which would negatively affect performance
 dramatically.
+
+## Dependencies
+- cmake
+- docopt
+
+## Installation - MacOS
+```
+brew install cmake
+git clone https://github.com/docopt/docopt.cpp.git
+cd docopt.cpp
+cmake .
+make install
+cd ../
+git clone https://github.com/DFStudio/c-vips-scale.git
+cd c-vips-scale
+cmake --build . --target all -- -j 6
+cp vips-scale /usr/local/bin/
+```
