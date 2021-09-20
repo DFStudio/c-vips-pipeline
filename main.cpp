@@ -136,10 +136,17 @@ int main(int argc, char **argv) {
         if(debug) std::cerr << "| Unsharp specified, applying filter" << std::endl;
         VImage blur = image.gaussblur(1.0);
         if(debug) std::cerr << "| Created blurred image" << std::endl;
+
+        VipsImage *image_p = image.get_image();
+        VipsImage *blur_p = blur.get_image();
+        if (debug) {
+            std::cerr << "| Image pointer: 0x" << std::hex << (intptr_t)image_p << std::dec << std::endl;
+            std::cerr << "| Blur pointer: 0x" << std::hex << (intptr_t)image_p << std::dec << std::endl;
+        }
         VipsImage *_sharpened;
-        unsharp(image.get_image(), blur.get_image(), &_sharpened);
+        unsharp(image_p, blur_p, &_sharpened, NULL);
+        if (debug) std::cerr << "| Sharpened pointer: 0x" << std::hex << (intptr_t)_sharpened << std::dec << std::endl;
         image = VImage(_sharpened);
-        if (debug) std::cerr << "| Applied unsharp mask" << std::endl;
     } else {
         if(debug) std::cerr << "| Unsharp not specified, skipping" << std::endl;
     }
