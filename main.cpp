@@ -17,8 +17,7 @@ Usage:
     --width=<width> --height=<height>
     [--quality=<q> --strip]
     [--autorotate --profile=<path> --intent=<intent>]
-    [--sharpen=<params>]
-    [--stats --unsharp]
+    [--debug --unsharp]
 
 Options:
   -h --help           Show this screen.
@@ -31,21 +30,18 @@ Options:
   --profile=<path>    The path to the ICC profile.
   --intent=<intent>   The rendering intent. One of:
                       "perceptual", "relative", "saturation", "absolute". [default: relative]
-  --sharpen=<params>  The sharpen parameters, if sharpening should be performed.
-                      Expressed as slash-delimited numbers: "sigma/x1/y2/y3/m1/m2".
-  --stats             Print the time taken to perform each operation.
+  --debug             Print debug information to stderr
   --unsharp           Apply an unsharp filter
 )";
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> time_point;
 
-void log_time(bool enabled, time_point &time, const std::string& message) {
-    if(!enabled)
-        return;
-    auto now = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - time);
-    std::cout << message << ": " << duration.count() << "ms" << std::endl;
-    time = now;
+time_point now() {
+    return std::chrono::high_resolution_clock::now();
+}
+
+long time_since(time_point start) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(now() - start).count();
 }
 
 int main(int argc, char **argv) {
@@ -56,20 +52,22 @@ int main(int argc, char **argv) {
             "vips-scale 0.1" // version string
     );
 
-    bool stats = args["--stats"].asBool();
+    bool debug = args["--debug"].asBool();
 
-    time_point start = std::chrono::high_resolution_clock::now();
-    time_point time = start;
+    if(debug) std::cerr << "Entering debug mode" << std::endl;
 
+    time_point start = now();
     if(VIPS_INIT( argv[0] ))
         vips_error_exit("init");
     unsharp_get_type();
 
-    log_time(stats, time, "vips init");
+    if(debug) std::cerr << "VIPS_INIT took " << time_since(start) << "ms" << std::endl << std::endl;
 
     VImage image;
 
     {
+        if(debug) std::cerr << "# Thumbnail" << std::endl;
+
         VipsIntent intent = VIPS_INTENT_RELATIVE;
         if(args["--intent"].isString()) {
             auto arg = args["--intent"].asString();
@@ -87,75 +85,94 @@ int main(int argc, char **argv) {
             }
         }
 
-        VOption *options = VImage::option()
-                ->set("height", (int)args["--height"].asLong())
-                ->set("no_rotate", !args["--autorotate"].asBool())
-                ->set("intent", intent)
-                ;
+        auto height = (int)args["--height"].asLong();
+        auto no_rotate = !args["--autorotate"].asBool();
+        auto input_image = args["--input"].asString();
+        auto width = (int)args["--width"].asLong();
+
+        if(debug) {
+            std::cerr << "| vips_thumbnail options:" << std::endl;
+            std::cerr << "|   required" << std::endl;
+            std::cerr << "|     filename: " << input_image << std::endl;
+            std::cerr << "|     width: " << width << std::endl;
+            std::cerr << "|   optional" << std::endl;
+            std::cerr << "|     height: " << height << std::endl;
+            std::cerr << "|     no_rotate: " << no_rotate << std::endl;
+            std::cerr << "|     intent: " << intent << std::endl;
+            std::cerr << "| Testing image with new_from_file" << std::endl;
+            auto test_image = VImage::new_from_file(input_image.c_str());
+            std::cerr << "| Image opened successfully. Test image filename: " << test_image.filename() << std::endl;
+            std::cerr << "| Running vips_thumbnail" << std::endl;
+        }
 
         image = VImage::thumbnail(
-                args["--input"].asString().c_str(),
-                (int)args["--width"].asLong(),
-                options
+                input_image.c_str(),
+                width,
+                VImage::option()
+                        ->set("height", height)
+                        ->set("no_rotate", no_rotate)
+                        ->set("intent", intent)
         );
 
+        if(debug) {
+            std::cerr << "| vips_thumbnail complete" << std::endl;
+            std::cerr << "# /Thumbnail" << std::endl << std::endl;
+            std::cerr << "# Profile" << std::endl;
+        }
         if(args["--profile"].isString()) {
-            image = image.icc_transform(args["--profile"].asString().c_str());
+            auto profile = args["--profile"].asString();
+            if(debug) std::cerr << "| Transforming color profile to " << profile << std::endl;
+            image = image.icc_transform(profile.c_str());
+        } else {
+            if(debug) std::cerr << "| No color profile specified, skipping transform" << std::endl;
+        }
+        if(debug) {
+            std::cerr << "# /Profile" << std::endl << std::endl;
         }
     }
 
-    log_time(stats, time, "load & thumbnail");
-
+    if(debug) std::cerr << "# Unsharp" << std::endl;
     if(args["--unsharp"].asBool()) {
+        if(debug) std::cerr << "| Unsharp specified, applying filter" << std::endl;
         VImage blur = image.gaussblur(1.0);
-        log_time(stats, time, "blur");
+        if(debug) std::cerr << "| Created blurred image" << std::endl;
         VipsImage *_sharpened;
         unsharp(image.get_image(), blur.get_image(), &_sharpened);
         image = VImage(_sharpened);
-
-        log_time(stats, time, "unsharp");
+        if (debug) std::cerr << "| Applied unsharp mask" << std::endl;
+    } else {
+        if(debug) std::cerr << "| Unsharp not specified, skipping" << std::endl;
     }
-
-    if(args["--sharpen"].isString()) {
-        std::stringstream test(args["--sharpen"].asString());
-        std::string segment;
-        std::vector<float> params;
-
-        while(std::getline(test, segment, '/'))
-        {
-            params.push_back(std::strtof(segment.c_str(), nullptr));
-        }
-
-        if(params.size() != 6) {
-            std::cerr << "Invalid sharpen parameters. Expected 6 parameters, got " << params.size() << std::endl;
-            return 1;
-        }
-        image = image.sharpen(
-                VImage::option()
-                        ->set("sigma", params[0])
-                        ->set("x1", params[1])
-                        ->set("y2", params[2])
-                        ->set("y3", params[3])
-                        ->set("m1", params[4])
-                        ->set("m2", params[5])
-        );
-
-        log_time(stats, time, "sharpen");
-    }
+    if(debug) std::cerr << "# /Unsharp" << std::endl << std::endl;
 
     // NOTE: if we wanted to add some extra processing (e.g., calculate an image hash) this would be the place to do it.
 
     {
-        VOption *options = VImage::option()
-                ->set("Q", (int)args["--quality"].asLong())
-                ->set("strip", args["--strip"].asBool())
-                ->set("optimize_coding", true);
-        image.write_to_file(args["--output"].asString().c_str(), options);
-
-        log_time(stats, time, "write");
+        if(debug) std::cerr << "# Write" << std::endl;
+        auto quality = (int)args["--quality"].asLong();
+        auto strip = args["--strip"].asBool();
+        auto output = args["--output"].asString();
+        if(debug) {
+            std::cerr << "| write_to_file options" << std::endl;
+            std::cerr << "|   required" << std::endl;
+            std::cerr << "|     filename: " << output << std::endl;
+            std::cerr << "|   optional" << std::endl;
+            std::cerr << "|     Q: " << quality << std::endl;
+            std::cerr << "|     strip: " << strip << std::endl;
+            std::cerr << "|     optimize_coding: true" << std::endl;
+        }
+        image.write_to_file(output.c_str(), VImage::option()
+                ->set("Q", quality)
+                ->set("strip", strip)
+                ->set("optimize_coding", true));
+        if(debug) {
+            std::cerr << "| Wrote file" << std::endl;
+            std::cerr << "# /Write" << std::endl << std::endl;
+        }
     }
 
-    log_time(stats, start, "total");
+
+    if(debug) std::cerr << "vips-scale completed in " << time_since(start) << "ms" << std::endl;
 
     return( 0 );
 }
