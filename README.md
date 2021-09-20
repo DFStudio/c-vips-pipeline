@@ -14,9 +14,20 @@ dramatically.
 - cmake
 - docopt
 
-## Installation - MacOS
+## Installation
+
+### Dependencies - MacOS
 ```
-brew install cmake
+brew install vips cmake
+```
+
+### Dependencies - Ubuntu
+```
+sudo apt-get install build-essential cmake pkg-config libglib2.0-dev libvips libvips-dev
+```
+
+----
+```
 git clone https://github.com/docopt/docopt.cpp.git
 cd docopt.cpp
 cmake .
@@ -24,6 +35,7 @@ make install
 cd ../
 git clone https://github.com/DFStudio/c-vips-scale.git
 cd c-vips-scale
-cmake --build . --target all -- -j 6
+cmake .
+cmake --build . --target all
 cp vips-scale /usr/local/bin/
 ```
