@@ -26,6 +26,8 @@ public:
     [[nodiscard]] int get_int(size_t index) const;
     [[nodiscard]] float get_float(size_t index) const;
     [[nodiscard]] double get_double(size_t index) const;
+
+    [[nodiscard]] const std::vector<std::string> &get_arguments() const;
 };
 
 

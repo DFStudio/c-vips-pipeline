@@ -55,8 +55,15 @@ double MachineState::eval(const std::string &expr) {
     return expression.value();
 }
 
-MachineState::MachineState() {
+bool MachineState::set_debug(bool value) {
+    return this->debug = value;
 }
+
+bool MachineState::is_debug() const {
+    return this->debug;
+}
+
+MachineState::MachineState() = default;
 
 MachineState::~MachineState() {
     for(auto &[name, reference] : this->variable_store) {

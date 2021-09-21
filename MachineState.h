@@ -22,6 +22,7 @@ class MachineState {
     std::map<std::string, double *> variable_store; // exprtk requires *references*, so we need to keep them alive
     std::map<std::string, double_function *> functions;
     exprtk::symbol_table<double> symbols;
+    bool debug = false;
 public:
     MachineState();
 
@@ -40,6 +41,10 @@ public:
     double get_variable(const std::string &name);
 
     double eval(const std::string &expr);
+
+    bool set_debug(bool value);
+
+    [[nodiscard]] bool is_debug() const;
 };
 
 

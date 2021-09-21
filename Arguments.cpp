@@ -67,3 +67,7 @@ double Arguments::get_double(size_t index) const {
     }
     return std::stod(str);
 }
+
+const std::vector<std::string> &Arguments::get_arguments() const {
+    return this->arguments;
+}
