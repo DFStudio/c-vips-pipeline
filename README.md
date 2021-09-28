@@ -16,6 +16,8 @@ dramatically.
 - Any numeric parameter can be defined using a variable or expression by prefixing it with a `%`. Expressions are evaluated using [ExprTk](https://github.com/ArashPartow/exprtk).
 - Variables are all internally represented with 64-bit floating point numbers
 - Slots and variables use string keys
+- For streaming inputs, use `-` to stream from stdin and `fifo:some/pipe` when streaming from a named pipe
+- For streaming outputs, use `-` to stream to stdout and `fifo:some/pipe` when streaming to a named pipe. The third parameter of `@write` is required when streaming.
 
 ```
 @thumbnail <file in> <slot out> <width> <height?> <no-rotate> <intent?>
@@ -34,8 +36,7 @@ dramatically.
 @trim_alpha <slot in> <slot out> <threshold> <margin>
 @multiply_color <slot in> <slot out> <r> <g> <b> <a>
 
-@stream <slot> <format>
-@write <slot in> <file out>
+@write <slot in> <file out> <stream format?>
 @consume <slot>
 @free <slot>
 @copy_slot <source slot> <dest slot>

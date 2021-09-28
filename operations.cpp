@@ -6,7 +6,9 @@
 #include <iostream>
 #include <limits>
 #include <exception>
+#include <optional>
 #include <fmt/core.h>
+#include <sys/fcntl.h>
 #include "unsharp.h"
 
 using namespace vips;
@@ -66,15 +68,49 @@ VipsBlendMode parse_blend_mode(const std::string &arg) {
     throw std::invalid_argument(fmt::format("Unrecognized blend mode '{}'", arg));
 }
 
+/**
+ * If the passed file is a streaming source, this function returns the stream source
+ */
+std::optional<VSource> parse_stream_source(const std::string &file) {
+    if(file == "-") {
+        return VSource::new_from_descriptor(0); // stdin
+    } else if(file.size() > 5 && file.substr(0, 5) == "fifo:") {
+        // vips will close this file descriptor when it's done
+        return VSource::new_from_descriptor(open(file.substr(5).c_str(), O_RDONLY));
+    } else {
+        return std::nullopt;
+    }
+}
+
+/**
+ * If the passed file is a streaming destination, this function returns a file descriptor, otherwise it returns -1.
+ */
+std::optional<VTarget> parse_stream_target(const std::string &file) {
+    if(file == "-") {
+        return VTarget::new_to_descriptor(1); // stdout
+    } else if(file.size() > 5 && file.substr(0, 5) == "fifo:") {
+        // vips will close this file descriptor when it's done
+        return VTarget::new_to_descriptor(open(file.substr(5).c_str(), O_WRONLY));
+    } else {
+        return std::nullopt;
+    }
+}
+
 void load(MachineState *state, const Arguments &arguments) {
     // <file in = 0> <slot out = 1>
     arguments.require(2);
 
-    const auto& file = arguments.get_string(0);
-    if(file == "-") {
-        state->set_image(arguments.get_string(1), VImage::new_from_source(VSource::new_from_descriptor(0), ""));
+    auto stream = parse_stream_source(arguments.get_string(0));
+    if(stream) {
+        state->set_image(
+                arguments.get_string(1),
+                VImage::new_from_source(*stream, "")
+        );
     } else {
-        state->set_image(arguments.get_string(1), VImage::new_from_file(file.c_str()));
+        state->set_image(
+                arguments.get_string(1),
+                VImage::new_from_file(arguments.get_string(0).c_str())
+        );
     }
 }
 
@@ -91,16 +127,16 @@ void load_thumbnail(MachineState *state, const Arguments &arguments) {
     if (arguments.has(3))
         options->set("height", arguments.get_int(3));
 
-    const auto &file = arguments.get_string(0);
-    if(file == "-") {
+    auto stream = parse_stream_source(arguments.get_string(0));
+    if(stream) {
         state->set_image(arguments.get_string(1), VImage::thumbnail_source(
-                VSource::new_from_descriptor(0),
+                *stream,
                 arguments.get_int(2),
                 options
         ));
     } else {
         state->set_image(arguments.get_string(1), VImage::thumbnail(
-                file.c_str(),
+                arguments.get_string(0).c_str(),
                 arguments.get_int(2),
                 options
         ));
@@ -321,16 +357,20 @@ void embed(MachineState *state, const Arguments &arguments) {
 }
 
 void write(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <file out = 1>
-    arguments.require(2);
-    state->get_image(arguments.get_string(0)).write_to_file(arguments.get_string(1).c_str());
-}
+    // <slot in = 0> <file out = 1> <stream format = 2>
+    arguments.require(3);
 
-void stream(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <format = 1>
-    arguments.require(2);
-    auto target = VTarget::new_to_descriptor(1);
-    state->get_image(arguments.get_string(0)).write_to_target(arguments.get_string(1).c_str(), target);
+    auto stream = parse_stream_target(arguments.get_string(1));
+    if(stream) {
+        state->get_image(arguments.get_string(0)).write_to_target(
+                arguments.get_string(2).c_str(),
+                *stream
+        );
+    } else {
+        state->get_image(arguments.get_string(0)).write_to_file(
+                arguments.get_string(1).c_str()
+        );
+    }
 }
 
 void consume(MachineState *state, const Arguments &arguments) {
@@ -374,7 +414,6 @@ const std::map<std::string, image_operation> operations = {
         {"fit",            fit},
         {"trim_alpha",     trim_alpha},
         {"multiply_color", multiply_color},
-        {"stream",         stream},
         {"write",          write},
         {"consume",        consume},
         {"free",           free_slot},
