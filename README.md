@@ -28,6 +28,7 @@ dramatically.
 @composite <base slot> <overlay slot> <slot out> <overlay x> <overlay y> <blend mode>
 @embed <slot in> <slot out> <x> <y> <width> <height> <extend> <bg red> <bg green> <bg blue> <bg alpha>
  
+@autorotate <slot in> <slot out>
 @flatten <slot in> <slot out> <background red> <background green> <background blue>
 @add_alpha <slot in> <slot out> <alpha>
 @scale <slot in> <slot out> <hscale> <vscale>
