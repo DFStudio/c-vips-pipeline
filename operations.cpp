@@ -143,6 +143,12 @@ void load_thumbnail(MachineState *state, const Arguments &arguments) {
     }
 }
 
+void autorotate(MachineState *state, const Arguments &arguments) {
+    // <slot in = 0> <slot out = 1>
+    arguments.require(2);
+    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).copy().autorot());
+}
+
 void transform_profile(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <profile = 2>
     arguments.require(3);
@@ -403,6 +409,7 @@ void set_var(MachineState *state, const Arguments &arguments) {
 const std::map<std::string, image_operation> operations = {
         {"load",           load},
         {"thumbnail",      load_thumbnail},
+        {"autorotate",     autorotate},
         {"profile",        transform_profile},
         {"unsharp",        unsharp},
         {"composite",      composite},
