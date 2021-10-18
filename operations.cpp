@@ -200,51 +200,11 @@ void multiply_color(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <r = 2> <g = 3> <b = 4> <a = 5>
     arguments.require(6);
     auto input_image = state->get_image(arguments.get_string(0));
-
-    double max;
-    switch(input_image.format()) {
-        case VIPS_FORMAT_NOTSET:
-            max = 0;
-            break;
-        case VIPS_FORMAT_UCHAR:
-            max = std::numeric_limits<unsigned char>::max();
-            break;
-        case VIPS_FORMAT_CHAR:
-            max = std::numeric_limits<char>::max();
-            break;
-        case VIPS_FORMAT_USHORT:
-            max = std::numeric_limits<unsigned short>::max();
-            break;
-        case VIPS_FORMAT_SHORT:
-            max = std::numeric_limits<short>::max();
-            break;
-        case VIPS_FORMAT_UINT:
-            max = std::numeric_limits<unsigned int>::max();
-            break;
-        case VIPS_FORMAT_INT:
-            max = std::numeric_limits<int>::max();
-            break;
-        case VIPS_FORMAT_FLOAT:
-            max = 1.0; // is this true? are there float images with ranges beyond 0-1? is this even relevant?
-            break;
-        case VIPS_FORMAT_COMPLEX:
-            max = 0;
-            break;
-        case VIPS_FORMAT_DOUBLE:
-            max = 1.0;
-            break;
-        case VIPS_FORMAT_DPCOMPLEX:
-            max = 0;
-            break;
-        case VIPS_FORMAT_LAST:
-            break;
-    }
-
     state->set_image(arguments.get_string(1), input_image * trim_bands(input_image.bands(), {
-            arguments.get_double(2) * max,
-            arguments.get_double(3) * max,
-            arguments.get_double(4) * max,
-            arguments.get_double(5) * max
+            arguments.get_double(2),
+            arguments.get_double(3),
+            arguments.get_double(4),
+            arguments.get_double(5)
     }));
 }
 
