@@ -252,19 +252,19 @@ void grid(MachineState *state, const Arguments &arguments) {
     vec2d base_size{(float)base.width(), (float)base.height()};
     vec2d item_size{(float)watermark.width(), (float)watermark.height()};
 
-    int hMin = -count_to_bound(base_size/2, item_size, origin, -hStep, true);
-    int hMax = count_to_bound(base_size/2, item_size, origin, hStep, true);
+    int hMin = -count_to_bound(base_size, item_size, origin, -hStep, true);
+    int hMax = count_to_bound(base_size, item_size, origin, hStep, true);
 
     std::vector<VImage> images{base};
     std::vector<int> modes;
     std::vector<int> xs, ys;
 
     for(int h = hMin; h <= hMax; h++) {
-        int vMin = -count_to_bound(base_size/2, item_size, origin + hStep * (float)h, -vStep, false);
-        int vMax = count_to_bound(base_size/2, item_size, origin + hStep * (float)h, vStep, false);
+        int vMin = -count_to_bound(base_size, item_size, origin + hStep * (float)h, -vStep, false);
+        int vMax = count_to_bound(base_size, item_size, origin + hStep * (float)h, vStep, false);
         for(int v = vMin; v <= vMax; v++) {
             images.push_back(watermark);
-            auto pos = origin + base_size/4 + vStep * (float)v + hStep * (float)h;
+            auto pos = origin + vStep * (float)v + hStep * (float)h;
             xs.push_back((int)pos.x);
             ys.push_back((int)pos.y);
             modes.push_back((int)mode);
@@ -354,27 +354,39 @@ void fit(MachineState *state, const Arguments &arguments) {
 }
 
 void trim_alpha(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <threshold = 2> <margin = 3>
-    arguments.require(4);
+    // <slot in = 0> <slot out = 1> <threshold = 2> <margin = 3> <center? = 4>
+    arguments.require(5);
 
     auto input = state->get_image(arguments.get_string(0));
 
     auto alpha = input.extract_band(3);
     int left, top, width, height;
     left = alpha.find_trim(&top, &width, &height,
-                           VImage::option()->set("threshold", arguments.get_double(2))->set("background",
-                                                                                            std::vector<double>{0}));
+                           VImage::option()
+                                   ->set("threshold", arguments.get_double(2))
+                                   ->set("background", std::vector<double>{0})
+    );
+    int right = input.width() - left - width;
+    int bottom = input.height() - top - height;
+
     int margin = arguments.get_int(3);
     left -= margin;
     top -= margin;
-    width += margin * 2;
-    height += margin * 2;
+    right -= margin;
+    bottom -= margin;
+
+    if(arguments.get_bool(4)) {
+        left = right = std::min(left, right);
+        top = bottom = std::min(top, bottom);
+    }
+
     if (left < 0) left = 0;
     if (top < 0) top = 0;
-    if (width < 1) width = 1;
-    if (width > input.width() - left) width = input.width() - left;
-    if (height < 1) height = 1;
-    if (height > input.height() - top) height = input.height() - top;
+    if (right < 0) right = 0;
+    if (bottom < 0) bottom = 0;
+
+    width = input.width() - left - right;
+    height = input.height() - top - bottom;
 
     state->set_image(arguments.get_string(1), input.extract_area(left, top, width, height));
 }
