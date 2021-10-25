@@ -44,6 +44,7 @@ dramatically.
 @copy_slot <source slot> <dest slot>
 
 @set_var <var> <value>
+@print <label> <value>
 ```
 
 Additional expression functions:

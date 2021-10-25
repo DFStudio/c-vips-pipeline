@@ -446,6 +446,14 @@ void set_var(MachineState *state, const Arguments &arguments) {
     state->set_variable(arguments.get_string(0), arguments.get_double(1));
 }
 
+void print(MachineState *state, const Arguments &arguments) {
+    // <label = 0> <value = 1>
+    arguments.require(2);
+
+    // we use stderr her because stdout is often used for image streaming
+    std::cerr << fmt::format("@{}: {}\n", arguments.get_string(0), arguments.get_double(1));
+}
+
 const std::map<std::string, image_operation> operations = {
         {"load",           load},
         {"thumbnail",      load_thumbnail},
@@ -468,6 +476,7 @@ const std::map<std::string, image_operation> operations = {
         {"copy_slot",      copy_slot},
 
         {"set_var",        set_var},
+        {"print",          print},
 };
 
 image_operation get_operation(const std::string &name) {
