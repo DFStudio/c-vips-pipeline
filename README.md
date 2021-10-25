@@ -25,8 +25,9 @@ dramatically.
 @unsharp <slot in> <slot out> <sigma> <strength>
 
 @load <file in> <slot out>
-@composite <base slot> <overlay slot> <slot out> <overlay x> <overlay y> <blend mode>
-@embed <slot in> <slot out> <x> <y> <width> <height> <extend> <bg red> <bg green> <bg blue> <bg alpha>
+@composite <base slot> <overlay slot> <slot out> <overlay x> <overlay y> <blend mode?>
+@embed <slot in> <slot out> <x> <y> <width> <height> <extend?> <bg red> <bg green> <bg blue> <bg alpha>
+@grid <slot in> <overlay in> <slot out> <origin x> <origin y> <vertical step x> <vertical step y> <horizontal step x> <horizontal step y> <blend mode?>
  
 @autorotate <slot in> <slot out>
 @flatten <slot in> <slot out> <background red> <background green> <background blue>

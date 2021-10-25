@@ -184,6 +184,86 @@ void composite(MachineState *state, const Arguments &arguments) {
     ));
 }
 
+struct vec2d {
+    float x, y;
+
+    vec2d operator+(const vec2d &other) const { return {this->x + other.x, this->y + other.y}; }
+    vec2d operator-(const vec2d &other) const { return {this->x - other.x, this->y - other.y}; }
+    vec2d operator*(const vec2d &other) const { return {this->x * other.x, this->y * other.y}; }
+    vec2d operator*(float other) const { return {this->x * other, this->y * other}; }
+    vec2d operator/(const vec2d &other) const { return {this->x / other.x, this->y / other.y}; }
+    vec2d operator/(float other) const { return {this->x / other, this->y / other}; }
+    vec2d operator-() const { return {-this->x, -this->y}; }
+};
+
+int count_to_bound(float base_size, float item_size, float origin, float step) {
+    if(step == 0) {
+        return 0;
+    } else if(step < 0) {
+        return (int)floor((origin + item_size) / -step);
+    } else {
+        return (int)floor((base_size - origin) / step);
+    }
+}
+
+int count_to_bound(vec2d base_size, vec2d item_size, vec2d origin, vec2d step, bool max) {
+    return max ? std::max(
+            step.x == 0 ? 0 : count_to_bound(base_size.x, item_size.x, origin.x, step.x),
+            step.y == 0 ? 0 : count_to_bound(base_size.y, item_size.y, origin.y, step.y)
+    ) : std::min(
+            step.x == 0 ? std::numeric_limits<int>::max() : count_to_bound(base_size.x, item_size.x, origin.x, step.x),
+            step.y == 0 ? std::numeric_limits<int>::max() : count_to_bound(base_size.y, item_size.y, origin.y, step.y)
+    );
+}
+
+void grid(MachineState *state, const Arguments &arguments) {
+    // <base slot = 0> <overlay slot = 1> <slot out = 2> <origin x = 3> <origin y = 4>
+    //   <vertical step x = 5> <vertical step y = 6> <horizontal step x = 7> <horizontal step y = 8>
+    //   <blend mode? = 9>
+    arguments.require(10);
+
+    VipsBlendMode mode = VIPS_BLEND_MODE_OVER;
+    if (arguments.has(9)) {
+        mode = parse_blend_mode(arguments.get_string(9));
+    }
+
+    auto base = state->get_image(arguments.get_string(0));
+    auto watermark = state->get_image(arguments.get_string(1));
+
+    vec2d origin{arguments.get_float(3), arguments.get_float(4)};
+    vec2d vStep{arguments.get_float(5), arguments.get_float(6)};
+    vec2d hStep{arguments.get_float(7), arguments.get_float(8)};
+    vec2d base_size{(float)base.width(), (float)base.height()};
+    vec2d item_size{(float)watermark.width(), (float)watermark.height()};
+
+    int hMin = -count_to_bound(base_size/2, item_size, origin, -hStep, true);
+    int hMax = count_to_bound(base_size/2, item_size, origin, hStep, true);
+
+    std::vector<VImage> images{base};
+    std::vector<int> modes;
+    std::vector<int> xs, ys;
+
+    for(int h = hMin; h <= hMax; h++) {
+        int vMin = -count_to_bound(base_size/2, item_size, origin + hStep * (float)h, -vStep, false);
+        int vMax = count_to_bound(base_size/2, item_size, origin + hStep * (float)h, vStep, false);
+        for(int v = vMin; v <= vMax; v++) {
+            images.push_back(watermark);
+            auto pos = origin + base_size/4 + vStep * (float)v + hStep * (float)h;
+            xs.push_back((int)pos.x);
+            ys.push_back((int)pos.y);
+            modes.push_back((int)mode);
+        }
+    }
+
+    state->set_image(arguments.get_string(2), VImage::composite(
+            images,
+            modes,
+            VImage::option()
+                    ->set("x", xs)
+                    ->set("y", ys)
+    ));
+}
+
 void add_alpha(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <alpha = 2>
     arguments.require(3);
@@ -298,7 +378,7 @@ void flatten(MachineState *state, const Arguments &arguments) {
 }
 
 void embed(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <x = 2> <y = 3> <width = 4> <height = 5> <extend = 6> <bg red = 7> <bg green = 8> <bg blue = 9> <bg alpha = 10>
+    // <slot in = 0> <slot out = 1> <x = 2> <y = 3> <width = 4> <height = 5> <extend? = 6> <bg red = 7> <bg green = 8> <bg blue = 9> <bg alpha = 10>
     arguments.require(11);
 
     VipsExtend extend = VIPS_EXTEND_BACKGROUND;
@@ -373,6 +453,7 @@ const std::map<std::string, image_operation> operations = {
         {"profile",        transform_profile},
         {"unsharp",        unsharp},
         {"composite",      composite},
+        {"grid",           grid},
         {"embed",          embed},
         {"flatten",        flatten},
         {"add_alpha",      add_alpha},
