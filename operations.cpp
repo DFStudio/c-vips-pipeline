@@ -39,6 +39,14 @@ VipsIntent parse_intent(const std::string &arg) {
     throw std::invalid_argument(fmt::format("Unrecognized intent '{}'", arg));
 }
 
+VipsSize parse_size(const std::string &arg) {
+    if (arg == "both") return VIPS_SIZE_BOTH;
+    if (arg == "up") return VIPS_SIZE_UP;
+    if (arg == "down") return VIPS_SIZE_DOWN;
+    if (arg == "force") return VIPS_SIZE_FORCE;
+    throw std::invalid_argument(fmt::format("Unrecognized size type '{}'", arg));
+}
+
 VipsBlendMode parse_blend_mode(const std::string &arg) {
     if (arg == "clear") return VIPS_BLEND_MODE_CLEAR;
     if (arg == "source") return VIPS_BLEND_MODE_SOURCE;
@@ -115,15 +123,23 @@ void load(MachineState *state, const Arguments &arguments) {
 }
 
 void load_thumbnail(MachineState *state, const Arguments &arguments) {
-    // <file in = 0> <slot out = 1> <width = 2> <height? = 3> <no-rotate = 4> <intent? = 5>
-    arguments.require(6);
+    // <file in = 0> <slot out = 1> <width = 2> <height? = 3> <no-rotate = 4> <intent? = 5> <size? = 6>
+    arguments.require(7);
 
     VipsIntent intent = VIPS_INTENT_RELATIVE;
     if (arguments.has(5)) {
         intent = parse_intent(arguments.get_string(5));
     }
 
-    VOption *options = VImage::option()->set("no_rotate", arguments.get_bool(4))->set("intent", intent);
+    VipsSize size = VIPS_SIZE_BOTH;
+    if (arguments.has(6)) {
+        size = parse_size(arguments.get_string(6));
+    }
+
+    VOption *options = VImage::option()
+            ->set("no_rotate", arguments.get_bool(4))
+            ->set("intent", intent)
+            ->set("size", size);
     if (arguments.has(3))
         options->set("height", arguments.get_int(3));
 

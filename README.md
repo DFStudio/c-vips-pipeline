@@ -20,7 +20,7 @@ dramatically.
 - For streaming outputs, use `-` to stream to stdout and `fifo:some/pipe` when streaming to a named pipe. The third parameter of `@write` is required when streaming.
 
 ```
-@thumbnail <file in> <slot out> <width> <height?> <no-rotate> <intent?>
+@thumbnail <file in> <slot out> <width> <height?> <no-rotate> <intent?> <size? = 6>
 @profile <slot in> <slot out> <profile>
 @unsharp <slot in> <slot out> <sigma> <strength>
 
@@ -35,7 +35,7 @@ dramatically.
 @scale <slot in> <slot out> <hscale> <vscale>
 @affine <slot in> <slot out> <m00> <m01> <tx> <m10> <m11> <ty>
 @fit <slot in> <slot out> <width?> <height?>
-@trim_alpha <slot in> <slot out> <threshold> <margin>
+@trim_alpha <slot in> <slot out> <threshold> <margin> <center?>
 @multiply_color <slot in> <slot out> <r> <g> <b> <a>
 
 @write <slot in> <file out> <stream format?>
