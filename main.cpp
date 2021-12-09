@@ -10,6 +10,7 @@
 #include "Arguments.h"
 #include "operations.h"
 #include "MachineState.h"
+#include "vips_dct.h"
 
 using namespace vips;
 
@@ -66,6 +67,7 @@ int main(int argc, char **argv) {
     if (VIPS_INIT(argv[0]))
         vips_error_exit("init");
     unsharp_get_type();
+    vips_dct_get_type();
 
     if (machine.is_debug()) {
         std::cerr << "VIPS_INIT took " << time_since(start) << "ms" << std::endl;

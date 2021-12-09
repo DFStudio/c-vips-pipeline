@@ -45,6 +45,7 @@ dramatically.
 
 @set_var <var> <value>
 @print <label> <value>
+@phash <slot> <reduce size> <sample size> <label>
 ```
 
 Additional expression functions:

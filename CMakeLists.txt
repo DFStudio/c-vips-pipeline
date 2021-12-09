@@ -10,7 +10,7 @@ ENDIF()
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(vips-tool main.cpp unsharp.c unsharp.h operations.cpp operations.h Arguments.cpp Arguments.h MachineState.cpp MachineState.h)
+add_executable(vips-tool main.cpp unsharp.c unsharp.h operations.cpp operations.h Arguments.cpp Arguments.h MachineState.cpp MachineState.h phash.cpp phash.h vips_dct.c vips_dct.h)
 
 target_include_directories(vips-tool PRIVATE include)
 target_include_directories(vips-tool SYSTEM PUBLIC /usr/local/include /opt/homebrew/include)

@@ -10,6 +10,7 @@
 #include <fmt/core.h>
 #include <sys/fcntl.h>
 #include "unsharp.h"
+#include "phash.h"
 
 using namespace vips;
 
@@ -482,6 +483,23 @@ void print(MachineState *state, const Arguments &arguments) {
     std::cerr << fmt::format("@{}: {}\n", arguments.get_string(0), arguments.get_double(1));
 }
 
+void phash(MachineState *state, const Arguments &arguments) {
+    // <slot in = 0> <reduce_size = 2> <sample_size = 3> <name = 4>
+    arguments.require(4);
+
+    auto hash = pHash(
+            state->get_image(arguments.get_string(0)),
+            arguments.get_int(1),
+            arguments.get_int(2)
+    );
+
+    std::string bits(hash.size(), '0');
+    for (auto i = 0; i < hash.size(); i++) {
+        bits[i] = hash[i] ? '1' : '0';
+    }
+    std::cerr << fmt::format("@{}: {}\n", arguments.get_string(3), bits);
+}
+
 const std::map<std::string, image_operation> operations = {
         {"load",           load},
         {"thumbnail",      load_thumbnail},
@@ -502,6 +520,7 @@ const std::map<std::string, image_operation> operations = {
         {"consume",        consume},
         {"free",           free_slot},
         {"copy_slot",      copy_slot},
+        {"phash",          phash},
 
         {"set_var",        set_var},
         {"print",          print},
