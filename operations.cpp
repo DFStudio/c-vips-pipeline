@@ -123,7 +123,7 @@ void load(MachineState *state, const Arguments &arguments) {
     }
 }
 
-void load_thumbnail(MachineState *state, const Arguments &arguments) {
+void thumbnail(MachineState *state, const Arguments &arguments) {
     // <file in = 0> <slot out = 1> <width = 2> <height? = 3> <no-rotate = 4> <intent? = 5> <size? = 6>
     arguments.require(7);
 
@@ -166,7 +166,7 @@ void autorotate(MachineState *state, const Arguments &arguments) {
     state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).copy().autorot());
 }
 
-void transform_profile(MachineState *state, const Arguments &arguments) {
+void profile(MachineState *state, const Arguments &arguments) {
     // <slot in = 0> <slot out = 1> <profile = 2>
     arguments.require(3);
     state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).icc_transform(arguments.get_string(2).c_str()));
@@ -455,7 +455,7 @@ void consume(MachineState *state, const Arguments &arguments) {
     g_free(memory);
 }
 
-void free_slot(MachineState *state, const Arguments &arguments) {
+void free(MachineState *state, const Arguments &arguments) {
     // <slot = 0>
     arguments.require(1);
     state->free_image(arguments.get_string(0));
@@ -499,31 +499,34 @@ void phash(MachineState *state, const Arguments &arguments) {
     std::cerr << fmt::format("@{}: {}\n", arguments.get_string(3), bits);
 }
 
-const std::map<std::string, image_operation> operations = {
-        {"load",           load},
-        {"thumbnail",      load_thumbnail},
-        {"autorotate",     autorotate},
-        {"profile",        transform_profile},
-        {"unsharp",        unsharp},
-        {"composite",      composite},
-        {"grid",           grid},
-        {"embed",          embed},
-        {"flatten",        flatten},
-        {"add_alpha",      add_alpha},
-        {"scale",          scale},
-        {"affine",         affine},
-        {"fit",            fit},
-        {"trim_alpha",     trim_alpha},
-        {"multiply_color", multiply_color},
-        {"write",          write},
-        {"consume",        consume},
-        {"free",           free_slot},
-        {"copy_slot",      copy_slot},
-        {"phash",          phash},
 
-        {"set_var",        set_var},
-        {"print",          print},
+#define OP(name) {#name, name}
+const std::map<std::string, image_operation> operations = {
+        OP(load),
+        OP(thumbnail),
+        OP(autorotate),
+        OP(profile),
+        OP(unsharp),
+        OP(composite),
+        OP(grid),
+        OP(embed),
+        OP(flatten),
+        OP(add_alpha),
+        OP(scale),
+        OP(affine),
+        OP(fit),
+        OP(trim_alpha),
+        OP(multiply_color),
+        OP(write),
+        OP(consume),
+        OP(free),
+        OP(copy_slot),
+        OP(phash),
+
+        OP(set_var),
+        OP(print),
 };
+#undef OP
 
 image_operation get_operation(const std::string &name) {
     return operations.at(name);
