@@ -42,6 +42,7 @@ dramatically.
 @consume <slot>
 @free <slot>
 @copy_slot <source slot> <dest slot>
+@resolve_slot <slot>
 
 @set_var <var> <value>
 @print <label> <value>

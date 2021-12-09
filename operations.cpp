@@ -467,6 +467,12 @@ void copy_slot(MachineState *state, const Arguments &arguments) {
     state->set_image(arguments.get_string(0), state->get_image(arguments.get_string(1)));
 }
 
+void resolve_slot(MachineState *state, const Arguments &arguments) {
+    // <source slot = 0>
+    arguments.require(1);
+    vips_image_wio_input(state->get_image(arguments.get_string(0)).get_image());
+}
+
 void set_var(MachineState *state, const Arguments &arguments) {
     // <var = 0> <value = 1>
     arguments.require(2);
@@ -521,6 +527,7 @@ const std::map<std::string, image_operation> operations = {
         OP(consume),
         OP(free),
         OP(copy_slot),
+        OP(resolve_slot),
         OP(phash),
 
         OP(set_var),
