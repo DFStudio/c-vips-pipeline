@@ -8,8 +8,8 @@ typedef struct _Unsharp {
     VipsOperation parent_instance;
 
     VipsImage *in;
-    VipsImage *blur;
     VipsImage *out;
+    double sigma;
     double strength;
 
 } Unsharp;
@@ -84,6 +84,7 @@ unsharp_build( VipsObject *object )
 {
     VipsObjectClass *class = VIPS_OBJECT_GET_CLASS( object );
     Unsharp *unsharp = (Unsharp *) object;
+    VipsImage **t = (VipsImage **) vips_object_local_array(object, 1);
 
     if( VIPS_OBJECT_CLASS( unsharp_parent_class )->build( object ) )
         return( -1 );
@@ -92,21 +93,19 @@ unsharp_build( VipsObject *object )
         vips_check_format( class->nickname, unsharp->in, VIPS_FORMAT_UCHAR ) )
         return( -1 );
 
-    if( vips_check_uncoded( class->nickname, unsharp->blur ) ||
-        vips_check_format( class->nickname, unsharp->blur, VIPS_FORMAT_UCHAR ) )
-        return( -1 );
+    vips_gaussblur(unsharp->in, &t[0], unsharp->sigma, NULL);
 
     g_object_set( object, "out", vips_image_new(), NULL );
 
     if( vips_image_pipelinev( unsharp->out,
-                              VIPS_DEMAND_STYLE_THINSTRIP, unsharp->in, unsharp->blur, NULL ) )
+                              VIPS_DEMAND_STYLE_THINSTRIP, unsharp->in, t[0], NULL ) )
         return( -1 );
 
     if( vips_image_generate( unsharp->out,
                              vips_start_many,
                              unsharp_generate,
                              vips_stop_many,
-                             vips_allocate_input_array(unsharp->out, unsharp->in, unsharp->blur, NULL),
+                             vips_allocate_input_array(unsharp->out, unsharp->in, t[0], NULL),
                              unsharp ) )
         return( -1 );
 
@@ -132,17 +131,18 @@ unsharp_class_init( UnsharpClass *class )
                     VIPS_ARGUMENT_REQUIRED_INPUT,
                     G_STRUCT_OFFSET( Unsharp, in ) );
 
-    VIPS_ARG_IMAGE( class, "blur", 2,
-                    "Blur",
-                    "Blurred image",
-                    VIPS_ARGUMENT_REQUIRED_INPUT,
-                    G_STRUCT_OFFSET( Unsharp, blur ) );
-
     VIPS_ARG_IMAGE( class, "out", 3,
                     "Output",
                     "Output image",
                     VIPS_ARGUMENT_REQUIRED_OUTPUT,
                     G_STRUCT_OFFSET( Unsharp, out ) );
+
+    VIPS_ARG_DOUBLE(class, "sigma", 4,
+                    "Sigma",
+                    "Blur sigma",
+                    VIPS_ARGUMENT_OPTIONAL_INPUT,
+                    G_STRUCT_OFFSET( Unsharp, sigma ),
+                    0, 255, 1.0);
 
     VIPS_ARG_DOUBLE(class, "strength", 4,
                     "Strength",
@@ -155,6 +155,7 @@ unsharp_class_init( UnsharpClass *class )
 static void
 unsharp_init( Unsharp *unsharp )
 {
+    unsharp->sigma = 1.0;
     unsharp->strength = 0.5;
 }
 
@@ -164,13 +165,13 @@ unsharp_init( Unsharp *unsharp )
  * @out: (out): output image
  * @...: %NULL-terminated list of optional named arguments
  */
-int unsharp( VipsImage *in, VipsImage *blur, VipsImage **out, ... )
+int unsharp( VipsImage *in, VipsImage **out, ... )
 {
     va_list ap;
     int result;
 
     va_start( ap, out );
-    result = vips_call_split( "unsharp", ap, in, blur, out );
+    result = vips_call_split( "unsharp", ap, in, out );
     va_end( ap );
 
     return( result );

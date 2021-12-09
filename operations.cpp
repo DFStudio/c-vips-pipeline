@@ -177,9 +177,8 @@ void unsharp(MachineState *state, const Arguments &arguments) {
     arguments.require(4);
 
     auto input = state->get_image(arguments.get_string(0));
-    VImage blur = input.gaussblur(arguments.get_double(2));
     VipsImage *sharpened;
-    unsharp(input.get_image(), blur.get_image(), &sharpened, "strength", arguments.get_double(3), NULL);
+    unsharp(input.get_image(), &sharpened, "sigma", arguments.get_double(2), "strength", arguments.get_double(3), NULL);
     state->set_image(arguments.get_string(1), VImage(sharpened));
 }
 

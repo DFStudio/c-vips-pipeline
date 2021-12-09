@@ -14,7 +14,7 @@ extern "C" {
 
 GType unsharp_get_type();
 
-int unsharp(VipsImage *in, VipsImage *blur, VipsImage **out, ...);
+int unsharp(VipsImage *in, VipsImage **out, ...);
 
 #if __cplusplus
 };
