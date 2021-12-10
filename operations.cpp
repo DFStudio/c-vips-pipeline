@@ -505,6 +505,12 @@ void phash(MachineState *state, const Arguments &arguments) {
     std::cerr << fmt::format("@{}: {}\n", arguments.get_string(3), bits);
 }
 
+void debug(MachineState *state, const Arguments &arguments) {
+    // <enabled = 0>
+    arguments.require(1);
+
+    state->set_debug(arguments.get_bool(0));
+}
 
 #define OP(name) {#name, name}
 const std::map<std::string, image_operation> operations = {
@@ -532,6 +538,7 @@ const std::map<std::string, image_operation> operations = {
 
         OP(set_var),
         OP(print),
+        OP(debug),
 };
 #undef OP
 

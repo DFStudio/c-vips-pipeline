@@ -46,10 +46,6 @@ int main(int argc, char **argv) {
         if(comment_depth > 0)
             continue;
 
-        if (arg == "@debug") {
-            machine.set_debug(true);
-            continue;
-        }
         if (!arg.empty() && arg[0] == '@') {
             if (!current_name.empty())
                 commands.emplace_back(i, current_name, current_command, &machine);

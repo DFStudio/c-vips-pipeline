@@ -2,7 +2,7 @@
 
 # vips-tool
 
-<img src="https://img.shields.io/badge/Version-1.1.0-blue" alt="Version 1.1.0"/>
+<img src="https://img.shields.io/badge/Version-1.1.1-blue" alt="Version 1.1.1"/>
 </div>
 
 ## About The Project
@@ -46,6 +46,8 @@ A general-purpose vips pipeline tool
 @set_var <var> <value>
 @print <label> <value>
 @phash <slot> <reduce size> <sample size> <label>
+
+@debug <enabled>
 ```
 
 Additional expression functions:
