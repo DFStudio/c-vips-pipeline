@@ -11,6 +11,7 @@
 std::vector<bool> pHash(const vips::VImage &image, int reduce_size, int sample_size) {
     auto resized = image
             .colourspace(VIPS_INTERPRETATION_B_W)
+            .extract_band(0)
             .resize(
                     ((double) reduce_size) / image.width(),
                     vips::VImage::option()->set("vscale", ((double) reduce_size) / image.height())

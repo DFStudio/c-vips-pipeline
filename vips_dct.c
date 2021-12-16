@@ -31,11 +31,7 @@ static int vips_dct_generate(VipsRegion *or, void *vseq, void *a, void *b, gbool
 
     /* The sequence value ... the thing returned by vips_start_one().
      */
-    VipsRegion **input_regions = (VipsRegion **) vseq;
-    VipsRegion *in_region = input_regions[0];
-
-    VipsImage **inputs = (VipsImage **) a;
-    VipsImage *in = inputs[0];
+    VipsRegion *in_region = (VipsRegion *) vseq;
 
     VipsDct *vips_dct = (VipsDct *) b;
     int size = vips_dct->size;
@@ -125,10 +121,10 @@ vips_dct_build(VipsObject *object) {
         return (-1);
 
     if (vips_image_generate(vips_dct->out,
-                            vips_start_many,
+                            vips_start_one,
                             vips_dct_generate,
-                            vips_stop_many,
-                            vips_allocate_input_array(vips_dct->out, t[0], NULL),
+                            vips_stop_one,
+                            t[0],
                             vips_dct))
         return (-1);
 
