@@ -55,3 +55,26 @@ Additional expression functions:
 vips_width('name')
 vips_height('name')
 ```
+
+## Installation
+
+### Dependencies - MacOS
+```
+brew install vips cmake
+```
+
+### Dependencies - Ubuntu
+```
+sudo apt-get install build-essential cmake pkg-config libglib2.0-dev libvips libvips-dev
+```
+
+----
+
+```
+git clone https://github.com/DFStudio/c-vips-scale.git
+cd c-vips-scale
+git checkout vips-tool
+cmake .
+cmake --build . --target all
+cp vips-scale /usr/local/bin/
+```
