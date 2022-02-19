@@ -71,6 +71,11 @@ sudo apt-get install build-essential cmake pkg-config libglib2.0-dev libvips lib
 ----
 
 ```
+git clone https://github.com/fmtlib/fmt.git
+cd fmt/
+cmake .
+make install
+cd ../
 git clone https://github.com/DFStudio/c-vips-scale.git
 cd c-vips-scale
 git checkout vips-tool
