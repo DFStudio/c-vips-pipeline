@@ -76,5 +76,5 @@ cd c-vips-scale
 git checkout vips-tool
 cmake .
 cmake --build . --target all
-cp vips-scale /usr/local/bin/
+cp vips-tool /usr/local/bin/
 ```
