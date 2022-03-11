@@ -1,3 +1,5 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "cert-err58-cpp"
 //
 // Created by Pierce Corcoran on 8/31/21.
 //
@@ -6,7 +8,6 @@
 #include <iostream>
 #include <limits>
 #include <exception>
-#include <optional>
 #include <fmt/core.h>
 #include <sys/fcntl.h>
 #include "unsharp.h"
@@ -542,8 +543,73 @@ const std::map<std::string, image_operation> operations = {
 };
 #undef OP
 
+const Operation new_load {
+        R"(Load an image from a file or stream
+
+Usage:
+  @load <file> <slot>)",
+        [](MachineState *state, option_map &options) {
+            auto stream = parse_stream_source(options["<file>"].asString());
+            if(stream) {
+                state->set_image(
+                        options["<slot>"].asString(),
+                        VImage::new_from_source(*stream, "")
+                );
+            } else {
+                state->set_image(
+                        options["<slot>"].asString(),
+                        VImage::new_from_file(options["<file>"].asString().c_str())
+                );
+            }
+        }
+};
+
+const Operation new_write {
+        R"(Write an image to a file or stream
+
+Usage:
+  @write <slot> <file> [--stream-format=<fmt>]
+
+Options:
+  -f <fmt> --stream-format=<fmt>  Specify the stream format (e.g. '.jpeg', '.png', '.webp').
+                                  (Required for stdout and FIFO streams.))",
+        [](MachineState *state, option_map &options) {
+            auto stream = parse_stream_target(options["<file>"].asString());
+            if(stream) {
+                if(!options["--stream-format"].isString()) {
+                    throw std::runtime_error("Writing to a stream requires --stream-format");
+                }
+
+                state->get_image(options["<slot>"].asString()).write_to_target(
+                        options["--stream-format"].asString().c_str(),
+                        *stream
+                );
+            } else {
+                state->get_image(options["<slot>"].asString()).write_to_file(
+                        options["<file>"].asString().c_str()
+                );
+            }
+        }
+};
+
+#define OP(name) {#name, &name}
+const std::map<std::string, const Operation *> new_operations = {
+        OP(new_load),
+        OP(new_write),
+};
+#undef OP
+
 image_operation get_operation(const std::string &name) {
     return operations.at(name);
+}
+
+const Operation *get_new_operation(const std::string &name) {
+    auto operation = new_operations.find(name);
+    if(operation == new_operations.end()) {
+        return nullptr;
+    } else {
+        return operation->second;
+    }
 }
 
 struct ImageFunction : public double_function
@@ -567,3 +633,5 @@ void initialize_functions(MachineState *state) {
     state->add_function("vips_height", new ImageFunction(state, [](auto image) { return (double)image.height(); }));
 }
 
+
+#pragma clang diagnostic pop
