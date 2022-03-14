@@ -14,7 +14,6 @@
 #include "Arguments.h"
 #include "MachineState.h"
 
-typedef std::map<std::string, docopt::value> option_map;
 typedef void (*image_operation)(MachineState *state, const Arguments &arguments);
 
 struct Operation {

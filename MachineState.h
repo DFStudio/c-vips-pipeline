@@ -17,8 +17,16 @@ typedef typename double_function::generic_type::scalar_view double_scalar_t;
 typedef typename double_function::generic_type::vector_view double_vector_t;
 typedef typename double_function::generic_type::string_view double_string_t;
 
+
 class MachineState {
+    struct StreamInfo {
+        int fd;
+        bool input;
+        bool used;
+    };
+
     std::map<std::string, vips::VImage> slots;
+    std::map<std::string, StreamInfo> files;
     std::map<std::string, double *> variable_store; // exprtk requires *references*, so we need to keep them alive
     std::map<std::string, double_function *> functions;
     exprtk::symbol_table<double> symbols;
@@ -47,6 +55,9 @@ public:
     [[nodiscard]] int verbosity() const;
 
     [[nodiscard]] bool is_verbose(int level) const;
+
+    void open_fd(const std::string &name, const std::string &file, bool input);
+    int parse_fd(const std::string &arg, bool input);
 };
 
 

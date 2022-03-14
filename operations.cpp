@@ -5,11 +5,9 @@
 //
 
 #include "operations.h"
-#include <iostream>
 #include <limits>
 #include <exception>
 #include <fmt/core.h>
-#include <sys/fcntl.h>
 #include "unsharp.h"
 #include "phash.h"
 
@@ -21,16 +19,6 @@ std::vector<double> trim_bands(int bands, std::vector<double> components) {
         out.push_back(components[i]);
     }
     return out;
-}
-
-VipsExtend parse_extend(const std::string &arg) {
-    if (arg == "black") return VIPS_EXTEND_BLACK;
-    if (arg == "copy") return VIPS_EXTEND_COPY;
-    if (arg == "repeat") return VIPS_EXTEND_REPEAT;
-    if (arg == "mirror") return VIPS_EXTEND_MIRROR;
-    if (arg == "white") return VIPS_EXTEND_WHITE;
-    if (arg == "background") return VIPS_EXTEND_BACKGROUND;
-    throw std::invalid_argument(fmt::format("Unrecognized extend mode '{}'", arg));
 }
 
 VipsIntent parse_intent(const std::string &arg) {
@@ -78,34 +66,6 @@ VipsBlendMode parse_blend_mode(const std::string &arg) {
     throw std::invalid_argument(fmt::format("Unrecognized blend mode '{}'", arg));
 }
 
-/**
- * If the passed file is a streaming source, this function returns the stream source
- */
-std::optional<VSource> parse_stream_source(const std::string &file) {
-    if (file == "-") {
-        return VSource::new_from_descriptor(0); // stdin
-    } else if (file.size() > 5 && file.substr(0, 5) == "fifo:") {
-        // vips will close this file descriptor when it's done
-        return VSource::new_from_descriptor(open(file.substr(5).c_str(), O_RDONLY));
-    } else {
-        return std::nullopt;
-    }
-}
-
-/**
- * If the passed file is a streaming destination, this function returns a file descriptor, otherwise it returns -1.
- */
-std::optional<VTarget> parse_stream_target(const std::string &file) {
-    if (file == "-") {
-        return VTarget::new_to_descriptor(1); // stdout
-    } else if (file.size() > 5 && file.substr(0, 5) == "fifo:") {
-        // vips will close this file descriptor when it's done
-        return VTarget::new_to_descriptor(open(file.substr(5).c_str(), O_WRONLY));
-    } else {
-        return std::nullopt;
-    }
-}
-
 const Operation cmd_load{
         "load",
         R"(
@@ -115,11 +75,11 @@ Usage:
   @load <file> <slot>
 )",
         [](MachineState *state, const Arguments &arguments) {
-            auto stream = parse_stream_source(arguments.get_string("<file>"));
-            if (stream) {
+            int fd = state->parse_fd(arguments.get_string("<file>"), true);
+            if (fd != -1) {
                 state->set_image(
                         arguments.get_string("<slot>"),
-                        VImage::new_from_source(*stream, "")
+                        VImage::new_from_source(VSource::new_from_descriptor(fd), "")
                 );
             } else {
                 state->set_image(
@@ -127,6 +87,27 @@ Usage:
                         VImage::new_from_file(arguments.get_string("<file>").c_str())
                 );
             }
+        }
+};
+
+const Operation cmd_open_stream{
+        "open_stream",
+        R"(
+Open a file for streaming. In future operations it can be referred to as 'stream:<name>'.
+Streams can only be used once this way and will have to be reopened to be used again.
+
+Usage:
+  @open_stream <name> <file> [--input]
+
+Options:
+  -i --input  Open the stream for reading
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            state->open_fd(
+                    arguments.get_string("<name>"),
+                    arguments.get_string("<file>"),
+                    arguments.get_bool("--input")
+            );
         }
 };
 
@@ -157,10 +138,10 @@ Options:
             if (arguments.has("<height>"))
                 voptions->set("height", arguments.get_int("<height>"));
 
-            auto stream = parse_stream_source(arguments.get_string("<file>"));
-            if (stream) {
+            int fd = state->parse_fd(arguments.get_string("<file>"), true);
+            if (fd != -1) {
                 state->set_image(arguments.get_string("<slot>"), VImage::thumbnail_source(
-                        *stream,
+                        VSource::new_from_descriptor(fd),
                         arguments.get_int("<width>"),
                         voptions
                 ));
@@ -400,10 +381,10 @@ Usage:
   @multiply_color <slot_in> <slot_out> [--red=<r>] [--green=<g>] [--blue=<b>] [--alpha=<a>]
 
 Options
-  -r=<r> --red=<r>    Multiply the red channel by this value   (0-255) [default: 255]
-  -g=<g> --green=<g>  Multiply the green channel by this value (0-255) [default: 255]
-  -b=<b> --blue=<b>   Multiply the blue channel by this value  (0-255) [default: 255]
-  -a=<a> --alpha=<a>  Multiply the alpha channel by this value (0-255) [default: 255]
+  -r <r> --red=<r>    Multiply the red channel by this value   (0-255) [default: 255]
+  -g <g> --green=<g>  Multiply the green channel by this value (0-255) [default: 255]
+  -b <b> --blue=<b>   Multiply the blue channel by this value  (0-255) [default: 255]
+  -a <a> --alpha=<a>  Multiply the alpha channel by this value (0-255) [default: 255]
 )",
         [](MachineState *state, const Arguments &arguments) {
             auto input_image = state->get_image(arguments.get_string("<slot_in>"));
@@ -426,8 +407,8 @@ Usage:
   @scale <slot_in> <slot_out> [--horizontal=<f>] [--vertical=<f>]
 
 Options:
-  -h=<f> --horizontal=<f>  The horizontal scale factor [default: 1]
-  -v=<f> --vertical=<f>    The vertical scale factor [default: 1]
+  -h <f> --horizontal=<f>  The horizontal scale factor [default: 1]
+  -v <f> --vertical=<f>    The vertical scale factor [default: 1]
 )",
         [](MachineState *state, const Arguments &arguments) {
             state->set_image(
@@ -481,8 +462,8 @@ Usage:
   @fit <slot_in> <slot_out> [--width=<n>] [--height=<n>]
 
 Options:
-  -w=<n> --width=<n>   The width to fit the image within
-  -h=<n> --height=<n>  The height to fit the image within
+  -w <n> --width=<n>   The width to fit the image within
+  -h <n> --height=<n>  The height to fit the image within
 )",
         [](MachineState *state, const Arguments &arguments) {
             auto input = state->get_image(arguments.get_string("<slot_in>"));
@@ -513,8 +494,8 @@ Usage:
   @trim_alpha <slot_in> <slot_out> [--threshold=<n>] [--margin=<n>] [--center]
 
 Options:
-  -t=<n> --threshold=<n>  The alpha threshold to consider "opaque" (0-255) [default: 1]
-  -m=<n> --margin=<n>     The number of margin pixels to give around the opaque region. This will not add
+  -t <n> --threshold=<n>  The alpha threshold to consider "opaque" (0-255) [default: 1]
+  -m <n> --margin=<n>     The number of margin pixels to give around the opaque region. This will not add
                           extra margin if the opaque region extends to the edge of the image. [default: 0]
   -c --center             Maintain the image center, cropping uniformly on opposing edges
 )",
@@ -564,9 +545,9 @@ Usage:
   @flatten <slot_in> <slot_out> [--red=<r>] [--green=<g>] [--blue=<b>]
 
 Options:
-  -r=<r> --red=<r>    The red channel to use as the background   (0-255) [default: 0]
-  -g=<g> --green=<g>  The green channel to use as the background (0-255) [default: 0]
-  -b=<b> --blue=<b>   The blue channel to use as the background  (0-255) [default: 0]
+  -r <r> --red=<r>    The red channel to use as the background   (0-255) [default: 0]
+  -g <g> --green=<g>  The green channel to use as the background (0-255) [default: 0]
+  -b <b> --blue=<b>   The blue channel to use as the background  (0-255) [default: 0]
 )",
         [](MachineState *state, const Arguments &arguments) {
             state->set_image(arguments.get_string("<slot_out>"),
@@ -594,15 +575,15 @@ Options:
                                   (Required for stdout and FIFO streams.)
 )",
         [](MachineState *state, const Arguments &arguments) {
-            auto stream = parse_stream_target(arguments.get_string("<file>"));
-            if (stream) {
+            int fd = state->parse_fd(arguments.get_string("<file>"), false);
+            if (fd != -1) {
                 if (!arguments.has("--stream-format")) {
                     throw std::runtime_error("Writing to a stream requires --stream-format");
                 }
 
                 state->get_image(arguments.get_string("<slot>")).write_to_target(
                         arguments.get_string("--stream-format").c_str(),
-                        *stream
+                        VTarget::new_to_descriptor(fd)
                 );
             } else {
                 state->get_image(arguments.get_string("<slot>")).write_to_file(
@@ -711,9 +692,9 @@ Usage:
   @phash <slot> --reduce=<n> --sample=<n> [--label=<label>]
 
 Options:
-  -r=<n> --reduce=<n>         The size to reduce the image to before computing the DCT
-  -s=<n> --sample=<n>         The size to sample from the DCT image. The output will be n^2 bits.
-  -l=<label> --label=<label>  The label to use. Defaults to the slot name.
+  -r <n> --reduce=<n>         The size to reduce the image to before computing the DCT
+  -s <n> --sample=<n>         The size to sample from the DCT image. The output will be n^2 bits.
+  -l <label> --label=<label>  The label to use. Defaults to the slot name.
 
 The output will be sent to stderr in the form '@<label>: <bit string>\n'.
 stderr is used because stdout may be used for image streaming.
@@ -759,6 +740,7 @@ const std::map<std::string, const Operation *> operations = {
         OP(cmd_resolve),
         OP(cmd_set_var),
         OP(cmd_print),
+        OP(cmd_open_stream),
 };
 #undef OP
 

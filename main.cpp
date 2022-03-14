@@ -1,11 +1,7 @@
 #include <chrono>
 #include <string>
 #include <vector>
-#include <map>
-#include <iostream>
-#include <sstream>
 #include <vips/vips.h>
-#include <vips/vips8>
 #include <fmt/core.h>
 #include <docopt.h>
 #include "unsharp.h"
@@ -13,6 +9,7 @@
 #include "operations.h"
 #include "MachineState.h"
 #include "vips_dct.h"
+#include "help_pages.h"
 
 using namespace vips;
 using fmt::print;
@@ -30,65 +27,15 @@ long time_since(time_point start) {
 const char USAGE[] =
         R"(Usage:
   vips-tool [-h|--help] [--version]
-  vips-tool help [<page>] [--wow=<val>]
+  vips-tool help [<page>]
   vips-tool [-v | -vv] [@<operation> <args...>]...
 
 Options:
   -h --help  Show this screen.
   --version  Show version.
   -v         Enable verbose (debug) logging.
-  --wow=<val>  Wow!
 
 'vips-tool help list' lists the available operations and help pages
-)";
-
-const char HELP_LIST[] =
-        R"(# Special pages
-    slots        Information about image slots
-    expressions  Information about the expression language
-    enums        Common enums used by multiple commands
-
-# Operations
-loading images:
-    load            Load an image from a file or stream
-    thumbnail       Create a thumbnail from a file or stream
-saving images:
-    write           Write an image to a file or stream
-    phash           Compute the perceptual hash of an image
-adjusting images:
-    profile         Apply an ICC color profile
-    unsharp         Perform an "unsharp" operation
-    autorotate      Flatten rotation metadata on an image
-    flatten         Flatten an image's alpha channel with a solid background
-    add_alpha       Add an alpha channel to an image if it doesn't already have one
-transforming images:
-    scale           Scale an image
-    affine          Apply an affine transform to an image
-    fit             Scale an image to fit inside a region
-    multiply_color  Multiply the RGBA channels of an image by a constant factor
-generating images:
-    trim_alpha      Crop transparent edges from an image
-compositing images:
-    grid            Composite by repeating an image in an arbitrary grid
-    composite       Composite two images
-manipulating slots:
-    consume         Consume a slot to resolve all its pixels
-    free            Free the image in a slot
-    copy            Copy an image to another slot
-    resolve         Resolve the image in a slot and store it in memory
-manipulating variables:
-    set_var         Set a variable to a value
-    print           Print the value of a variable
-)";
-
-const char HELP_ENUMS[] =
-        R"(# Enums
-
-Blend modes:
-  (see https://www.cairographics.org/operators)
-  clear, source, over, in, out, atop, dest, dest_over, dest_in, dest_out,
-  dest_atop, xor, add, saturate, multiply, screen, overlay, darken, lighten,
-  colour_dodge, colour_burn, hard_light, soft_light, difference, exclusion
 )";
 
 int main(int argc, char **argv) {
@@ -117,6 +64,8 @@ int main(int argc, char **argv) {
                 print("{}", HELP_LIST);
                 exit(0);
             } else if(page == "enums") {
+                print("{}", HELP_ENUMS);
+                exit(0);
             } else {
                 auto operation = get_operation(page);
                 if(operation == nullptr) {
@@ -187,7 +136,7 @@ int main(int argc, char **argv) {
             } catch (docopt::DocoptArgumentError const& error) {
                 print(stderr, "Error parsing operation {} '{}'\n", i, command[0]);
                 print(stderr, "{}\n", error.what());
-                print("{}\n", operation->help_text);
+                print(stderr, "{}\n", operation->help_text);
                 std::exit(-1);
             }
         }

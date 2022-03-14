@@ -7,6 +7,7 @@
 #include <exception>
 #include <utility>
 #include <fmt/core.h>
+#include <sys/fcntl.h>
 
 void MachineState::set_image(const std::string &name, vips::VImage image) {
     this->slots[name] = std::move(image);
@@ -86,4 +87,45 @@ void MachineState::add_function(const std::string &name, double_function *functi
     }
     this->functions[name] = function;
     this->symbols.add_function(name, *function);
+}
+
+void MachineState::open_fd(const std::string &name, const std::string &file, bool input) {
+    auto existing = this->files.find(name);
+    if(existing != this->files.end() && !existing->second.used) {
+        close(existing->second.fd);
+    }
+
+    this->files[name] = {
+            open(file.c_str(), input ? O_RDONLY : O_WRONLY),
+            input,
+            false
+    };
+}
+
+int MachineState::parse_fd(const std::string &arg, bool input) {
+    if(arg == "-") {
+        return input ? 0 : 1; // stdin : stdout
+    } else if(arg.size() >= 7 && arg.substr(0, 7) == "stream:") {
+        auto entry = this->files.find(arg.substr(7));
+        if(entry == this->files.end()) {
+            throw std::invalid_argument(fmt::format("Unknown stream {}", arg.substr(3)));
+        } else if(entry->second.used) {
+            throw std::invalid_argument(fmt::format(
+                    "Stream {} has already been used. Reopen it to use it again",
+                    arg.substr(3)
+            ));
+        } else if(entry->second.input != input) {
+            throw std::invalid_argument(fmt::format(
+                    "Stream {} is opened for {} but is being used for {}",
+                    arg.substr(3),
+                    entry->second.input ? "input" : "output",
+                    input ? "input" : "output"
+            ));
+        } else {
+            entry->second.used = true;
+            return entry->second.fd;
+        }
+    } else {
+        return -1;
+    }
 }
