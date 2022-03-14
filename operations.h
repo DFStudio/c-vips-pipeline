@@ -16,15 +16,14 @@
 
 typedef std::map<std::string, docopt::value> option_map;
 typedef void (*image_operation)(MachineState *state, const Arguments &arguments);
-typedef void (*new_operation)(MachineState *state, option_map &options);
 
 struct Operation {
+    std::string name;
     std::string help_text;
-    new_operation operation;
+    image_operation operation;
 };
 
 void initialize_functions(MachineState *state);
-image_operation get_operation(const std::string &name);
-const Operation *get_new_operation(const std::string &name);
+const Operation *get_operation(const std::string &name);
 
 #endif //VIPS_SCALE_OPERATIONS_H

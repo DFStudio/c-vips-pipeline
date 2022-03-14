@@ -55,12 +55,16 @@ double MachineState::eval(const std::string &expr) {
     return expression.value();
 }
 
-bool MachineState::set_debug(bool value) {
-    return this->debug = value;
+void MachineState::set_verbosity(int level) {
+    this->_verbosity = level;
 }
 
-bool MachineState::is_debug() const {
-    return this->debug;
+int MachineState::verbosity() const {
+    return this->_verbosity;
+}
+
+bool MachineState::is_verbose(int level) const {
+    return this->verbosity() >= level;
 }
 
 MachineState::MachineState() = default;

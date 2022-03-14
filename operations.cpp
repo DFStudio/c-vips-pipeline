@@ -17,7 +17,7 @@ using namespace vips;
 
 std::vector<double> trim_bands(int bands, std::vector<double> components) {
     std::vector<double> out;
-    for(int i = 0; i < bands && i < components.size(); i++) {
+    for (int i = 0; i < bands && i < components.size(); i++) {
         out.push_back(components[i]);
     }
     return out;
@@ -82,9 +82,9 @@ VipsBlendMode parse_blend_mode(const std::string &arg) {
  * If the passed file is a streaming source, this function returns the stream source
  */
 std::optional<VSource> parse_stream_source(const std::string &file) {
-    if(file == "-") {
+    if (file == "-") {
         return VSource::new_from_descriptor(0); // stdin
-    } else if(file.size() > 5 && file.substr(0, 5) == "fifo:") {
+    } else if (file.size() > 5 && file.substr(0, 5) == "fifo:") {
         // vips will close this file descriptor when it's done
         return VSource::new_from_descriptor(open(file.substr(5).c_str(), O_RDONLY));
     } else {
@@ -96,9 +96,9 @@ std::optional<VSource> parse_stream_source(const std::string &file) {
  * If the passed file is a streaming destination, this function returns a file descriptor, otherwise it returns -1.
  */
 std::optional<VTarget> parse_stream_target(const std::string &file) {
-    if(file == "-") {
+    if (file == "-") {
         return VTarget::new_to_descriptor(1); // stdout
-    } else if(file.size() > 5 && file.substr(0, 5) == "fifo:") {
+    } else if (file.size() > 5 && file.substr(0, 5) == "fifo:") {
         // vips will close this file descriptor when it's done
         return VTarget::new_to_descriptor(open(file.substr(5).c_str(), O_WRONLY));
     } else {
@@ -106,120 +106,185 @@ std::optional<VTarget> parse_stream_target(const std::string &file) {
     }
 }
 
-void load(MachineState *state, const Arguments &arguments) {
-    // <file in = 0> <slot out = 1>
-    arguments.require(2);
+const Operation cmd_load{
+        "load",
+        R"(
+Load an image from a file or stream
 
-    auto stream = parse_stream_source(arguments.get_string(0));
-    if(stream) {
-        state->set_image(
-                arguments.get_string(1),
-                VImage::new_from_source(*stream, "")
-        );
-    } else {
-        state->set_image(
-                arguments.get_string(1),
-                VImage::new_from_file(arguments.get_string(0).c_str())
-        );
-    }
-}
+Usage:
+  @load <file> <slot>
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            auto stream = parse_stream_source(arguments.get_string("<file>"));
+            if (stream) {
+                state->set_image(
+                        arguments.get_string("<slot>"),
+                        VImage::new_from_source(*stream, "")
+                );
+            } else {
+                state->set_image(
+                        arguments.get_string("<slot>"),
+                        VImage::new_from_file(arguments.get_string("<file>").c_str())
+                );
+            }
+        }
+};
 
-void thumbnail(MachineState *state, const Arguments &arguments) {
-    // <file in = 0> <slot out = 1> <width = 2> <height? = 3> <no-rotate = 4> <intent? = 5> <size? = 6>
-    arguments.require(7);
+const Operation cmd_thumbnail{
+        "thumbnail",
+        R"(
+Create a thumbnail from a file or stream
 
-    VipsIntent intent = VIPS_INTENT_RELATIVE;
-    if (arguments.has(5)) {
-        intent = parse_intent(arguments.get_string(5));
-    }
+Usage:
+  @thumbnail <file> <slot> <width> [<height>] [--no-rotate] [--intent=<intent>] [--sizing=<sizing>]
 
-    VipsSize size = VIPS_SIZE_BOTH;
-    if (arguments.has(6)) {
-        size = parse_size(arguments.get_string(6));
-    }
+Options:
+  --no-rotate  Don't automatically flatten rotation metadata
+  --intent=<intent>  The VIPS scaling intent. One of 'perceptual',
+                     'relative', 'saturation', 'absolute'. [default: relative]
+  --sizing=<sizing>  The VIPS sizing type. One of 'both', 'up', 'down', 'force'.
+                     [default: down]
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            VipsIntent intent = parse_intent(arguments.get_string("--intent"));
 
-    VOption *options = VImage::option()
-            ->set("no_rotate", arguments.get_bool(4))
-            ->set("intent", intent)
-            ->set("size", size);
-    if (arguments.has(3))
-        options->set("height", arguments.get_int(3));
+            VipsSize size = parse_size(arguments.get_string("--sizing"));
 
-    auto stream = parse_stream_source(arguments.get_string(0));
-    if(stream) {
-        state->set_image(arguments.get_string(1), VImage::thumbnail_source(
-                *stream,
-                arguments.get_int(2),
-                options
-        ));
-    } else {
-        state->set_image(arguments.get_string(1), VImage::thumbnail(
-                arguments.get_string(0).c_str(),
-                arguments.get_int(2),
-                options
-        ));
-    }
-}
+            VOption *voptions = VImage::option()
+                    ->set("no_rotate", arguments.get_bool("--no-rotate"))
+                    ->set("intent", intent)
+                    ->set("size", size);
+            if (arguments.has("<height>"))
+                voptions->set("height", arguments.get_int("<height>"));
 
-void autorotate(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1>
-    arguments.require(2);
-    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).copy().autorot());
-}
+            auto stream = parse_stream_source(arguments.get_string("<file>"));
+            if (stream) {
+                state->set_image(arguments.get_string("<slot>"), VImage::thumbnail_source(
+                        *stream,
+                        arguments.get_int("<width>"),
+                        voptions
+                ));
+            } else {
+                state->set_image(arguments.get_string("<slot>"), VImage::thumbnail(
+                        arguments.get_string("<file>").c_str(),
+                        arguments.get_int("<width>"),
+                        voptions
+                ));
+            }
+        }
+};
 
-void profile(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <profile = 2>
-    arguments.require(3);
-    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).icc_transform(arguments.get_string(2).c_str()));
-}
+const Operation cmd_autorotate{
+        "autorotate",
+        R"(
+Flatten rotation metadata on an image
 
-void unsharp(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <sigma = 2> <strength = 3>
-    arguments.require(4);
+Usage:
+  @autorotate <slot_in> <slot_out>
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            state->set_image(
+                    arguments.get_string("<slot_out>"),
+                    state->get_image(arguments.get_string("<slot_in>")).copy().autorot()
+            );
+        }
 
-    auto input = state->get_image(arguments.get_string(0));
-    VipsImage *sharpened;
-    unsharp(input.get_image(), &sharpened, "sigma", arguments.get_double(2), "strength", arguments.get_double(3), NULL);
-    state->set_image(arguments.get_string(1), VImage(sharpened));
-}
+};
 
-void composite(MachineState *state, const Arguments &arguments) {
-    // <base slot = 0> <overlay slot = 1> <slot out = 2> <overlay x = 3> <overlay y = 4> <blend mode? = 5>
-    arguments.require(6);
+const Operation cmd_profile{
+        "profile",
+        R"(
+Apply an ICC color profile
 
-    VipsBlendMode mode = VIPS_BLEND_MODE_OVER;
-    if (arguments.has(5)) {
-        mode = parse_blend_mode(arguments.get_string(5));
-    }
+Usage:
+  @profile <slot_in> <slot_out> --profile=<profile>
 
-    state->set_image(arguments.get_string(2), state->get_image(arguments.get_string(0)).composite2(
-            state->get_image(arguments.get_string(1)),
-            mode,
-            VImage::option()
-                    ->set("x", arguments.get_int(3))
-                    ->set("y", arguments.get_int(4))
-    ));
-}
+Options:
+  --profile=<profile>  The output ICC color profile
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            state->set_image(
+                    arguments.get_string("<slot_out>"),
+                    state->get_image(arguments.get_string("<slot_in>"))
+                            .icc_transform(arguments.get_string("--profile").c_str())
+            );
+        }
+};
+
+const Operation cmd_unsharp{
+        "unsharp",
+        R"(
+Perform an "unsharp" operation on an image
+
+Usage:
+  @unsharp <slot_in> <slot_out> <sigma> <strength>
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            auto input = state->get_image(arguments.get_string("<slot_in>"));
+            VipsImage *sharpened;
+            unsharp(
+                    input.get_image(), &sharpened,
+                    "sigma", arguments.get_double("<sigma>"),
+                    "strength", arguments.get_double("<strength>"),
+                    NULL
+            );
+            state->set_image(arguments.get_string("<slot_out>"), VImage(sharpened));
+        }
+};
+
+const Operation cmd_composite{
+        "composite",
+        R"(
+Composite two images
+
+Usage:
+  @composite <base_slot> <overlay_slot> <slot_out> <overlay_x> <overlay_y> [--blend-mode=<mode>]
+
+Options:
+  --blend-mode=<mode>  The blending mode to use for the composite operation
+                       (see 'vips-tool help enums') [default: over]
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            // <base slot = 0> <overlay slot = 1> <slot out = 2> <overlay x = 3> <overlay y = 4> <blend mode? = 5>
+            state->set_image(
+                    arguments.get_string("<slot_out>"),
+                    state->get_image(arguments.get_string("<base_slot>"))
+                            .composite2(
+                                    state->get_image(arguments.get_string("<overlay_slot>")),
+                                    parse_blend_mode(arguments.get_string("--blend-mode")),
+                                    VImage::option()
+                                            ->set("x", arguments.get_int("<overlay_x>"))
+                                            ->set("y", arguments.get_int("<overlay_y>"))
+                            )
+            );
+        }
+};
 
 struct vec2d {
     float x, y;
 
     vec2d operator+(const vec2d &other) const { return {this->x + other.x, this->y + other.y}; }
+
     vec2d operator-(const vec2d &other) const { return {this->x - other.x, this->y - other.y}; }
+
     vec2d operator*(const vec2d &other) const { return {this->x * other.x, this->y * other.y}; }
+
     vec2d operator*(float other) const { return {this->x * other, this->y * other}; }
+
     vec2d operator/(const vec2d &other) const { return {this->x / other.x, this->y / other.y}; }
+
     vec2d operator/(float other) const { return {this->x / other, this->y / other}; }
+
     vec2d operator-() const { return {-this->x, -this->y}; }
 };
 
 int count_to_bound(float base_size, float item_size, float origin, float step) {
-    if(step == 0) {
+    if (step == 0) {
         return 0;
-    } else if(step < 0) {
-        return (int)floor((origin + item_size) / -step);
+    } else if (step < 0) {
+        return (int) floor((origin + item_size) / -step);
     } else {
-        return (int)floor((base_size - origin) / step);
+        return (int) floor((base_size - origin) / step);
     }
 }
 
@@ -228,397 +293,491 @@ int count_to_bound(vec2d base_size, vec2d item_size, vec2d origin, vec2d step, b
             step.x == 0 ? 0 : count_to_bound(base_size.x, item_size.x, origin.x, step.x),
             step.y == 0 ? 0 : count_to_bound(base_size.y, item_size.y, origin.y, step.y)
     ) : std::min(
-            step.x == 0 ? std::numeric_limits<int>::max() : count_to_bound(base_size.x, item_size.x, origin.x, step.x),
-            step.y == 0 ? std::numeric_limits<int>::max() : count_to_bound(base_size.y, item_size.y, origin.y, step.y)
+            step.x == 0 ? std::numeric_limits<int>::max() : count_to_bound(base_size.x, item_size.x, origin.x,
+                                                                           step.x),
+            step.y == 0 ? std::numeric_limits<int>::max() : count_to_bound(base_size.y, item_size.y, origin.y,
+                                                                           step.y)
     );
 }
 
-void grid(MachineState *state, const Arguments &arguments) {
-    // <base slot = 0> <overlay slot = 1> <slot out = 2> <origin x = 3> <origin y = 4>
-    //   <vertical step x = 5> <vertical step y = 6> <horizontal step x = 7> <horizontal step y = 8>
-    //   <blend mode? = 9>
-    arguments.require(10);
-
-    VipsBlendMode mode = VIPS_BLEND_MODE_OVER;
-    if (arguments.has(9)) {
-        mode = parse_blend_mode(arguments.get_string(9));
-    }
-
-    auto base = state->get_image(arguments.get_string(0));
-    auto watermark = state->get_image(arguments.get_string(1));
-
-    vec2d origin{arguments.get_float(3), arguments.get_float(4)};
-    vec2d vStep{arguments.get_float(5), arguments.get_float(6)};
-    vec2d hStep{arguments.get_float(7), arguments.get_float(8)};
-    vec2d base_size{(float)base.width(), (float)base.height()};
-    vec2d item_size{(float)watermark.width(), (float)watermark.height()};
-
-    int hMin = -count_to_bound(base_size, item_size, origin, -hStep, true);
-    int hMax = count_to_bound(base_size, item_size, origin, hStep, true);
-
-    std::vector<VImage> images{base};
-    std::vector<int> modes;
-    std::vector<int> xs, ys;
-
-    for(int h = hMin; h <= hMax; h++) {
-        int vMin = -count_to_bound(base_size, item_size, origin + hStep * (float)h, -vStep, false);
-        int vMax = count_to_bound(base_size, item_size, origin + hStep * (float)h, vStep, false);
-        for(int v = vMin; v <= vMax; v++) {
-            images.push_back(watermark);
-            auto pos = origin + vStep * (float)v + hStep * (float)h;
-            xs.push_back((int)pos.x);
-            ys.push_back((int)pos.y);
-            modes.push_back((int)mode);
-        }
-    }
-
-    state->set_image(arguments.get_string(2), VImage::composite(
-            images,
-            modes,
-            VImage::option()
-                    ->set("x", xs)
-                    ->set("y", ys)
-    ));
-}
-
-void add_alpha(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <alpha = 2>
-    arguments.require(3);
-
-    auto input_image = state->get_image(arguments.get_string(0));
-    if(input_image.bands() == 4)
-        state->set_image(arguments.get_string(1), input_image);
-    else
-        state->set_image(arguments.get_string(1), input_image
-                .bandjoin_const({arguments.get_double(2)}));
-}
-
-void multiply_color(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <r = 2> <g = 3> <b = 4> <a = 5>
-    arguments.require(6);
-    auto input_image = state->get_image(arguments.get_string(0));
-    state->set_image(arguments.get_string(1), input_image * trim_bands(input_image.bands(), {
-            arguments.get_double(2),
-            arguments.get_double(3),
-            arguments.get_double(4),
-            arguments.get_double(5)
-    }));
-}
-
-void scale(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <hscale = 2> <vscale = 3>
-    arguments.require(4);
-
-    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).resize(
-            arguments.get_double(2),
-            VImage::option()->set("vscale", arguments.get_double(3))
-    ));
-}
-
-void affine(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <m00 = 2> <m01 = 3> <tx = 4> <m10 = 5> <m11 = 6> <ty = 7>
-    arguments.require(8);
-
-    auto input_image = state->get_image(arguments.get_string(0));
-    state->set_image(arguments.get_string(1), input_image.affine(
-            {
-                    arguments.get_double(2),
-                    arguments.get_double(3),
-                    arguments.get_double(5),
-                    arguments.get_double(6),
-            },
-            VImage::option()
-                    ->set("odx", arguments.get_double(4))
-                    ->set("ody", arguments.get_double(7))
-    ));
-}
-
-void fit(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <width? = 2> <height? = 3>
-    arguments.require(4);
-
-    auto input = state->get_image(arguments.get_string(0));
-    auto scale = -1.0;
-    if (arguments.has(2)) {
-        scale = arguments.get_double(2) / input.width();
-    }
-    if (arguments.has(3)) {
-        double vscale = arguments.get_double(3) / input.height();
-        if (scale < 0 || vscale < scale)
-            scale = vscale;
-    }
-    if (scale < 0) {
-        state->set_image(arguments.get_string(1), input.copy());
-    } else {
-        state->set_image(arguments.get_string(1), input.resize(scale, VImage::option()));
-    }
-}
-
-void trim_alpha(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <threshold = 2> <margin = 3> <center? = 4>
-    arguments.require(5);
-
-    auto input = state->get_image(arguments.get_string(0));
-
-    auto alpha = input.extract_band(3);
-    int left, top, width, height;
-    left = alpha.find_trim(&top, &width, &height,
-                           VImage::option()
-                                   ->set("threshold", arguments.get_double(2))
-                                   ->set("background", std::vector<double>{0})
-    );
-    int right = input.width() - left - width;
-    int bottom = input.height() - top - height;
-
-    int margin = arguments.get_int(3);
-    left -= margin;
-    top -= margin;
-    right -= margin;
-    bottom -= margin;
-
-    if(arguments.get_bool(4)) {
-        left = right = std::min(left, right);
-        top = bottom = std::min(top, bottom);
-    }
-
-    if (left < 0) left = 0;
-    if (top < 0) top = 0;
-    if (right < 0) right = 0;
-    if (bottom < 0) bottom = 0;
-
-    width = input.width() - left - right;
-    height = input.height() - top - bottom;
-
-    state->set_image(arguments.get_string(1), input.extract_area(left, top, width, height));
-}
-
-void flatten(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <background red = 2> <background green = 3> <background blue = 4>
-    arguments.require(5);
-
-    state->set_image(arguments.get_string(1), state->get_image(arguments.get_string(0)).flatten(
-            VImage::option()
-                    ->set("background", std::vector<double>{
-                            arguments.get_double(2),
-                            arguments.get_double(3),
-                            arguments.get_double(4)
-                    })
-    ));
-}
-
-void embed(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <slot out = 1> <x = 2> <y = 3> <width = 4> <height = 5> <extend? = 6> <bg red = 7> <bg green = 8> <bg blue = 9> <bg alpha = 10>
-    arguments.require(11);
-
-    VipsExtend extend = VIPS_EXTEND_BACKGROUND;
-    if (arguments.has(6)) {
-        extend = parse_extend(arguments.get_string(6));
-    }
-    auto input_image = state->get_image(arguments.get_string(0));
-    state->set_image(arguments.get_string(1), input_image.embed(
-            arguments.get_int(2),
-            arguments.get_int(3),
-            arguments.get_int(4),
-            arguments.get_int(5),
-            VImage::option()
-                    ->set("extend", extend)
-                    ->set("background", trim_bands(input_image.bands(), {
-                            arguments.get_double(7),
-                            arguments.get_double(8),
-                            arguments.get_double(9),
-                            arguments.get_double(10),
-                    }))
-    ));
-}
-
-void write(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <file out = 1> <stream format = 2>
-    arguments.require(3);
-
-    auto stream = parse_stream_target(arguments.get_string(1));
-    if(stream) {
-        state->get_image(arguments.get_string(0)).write_to_target(
-                arguments.get_string(2).c_str(),
-                *stream
-        );
-    } else {
-        state->get_image(arguments.get_string(0)).write_to_file(
-                arguments.get_string(1).c_str()
-        );
-    }
-}
-
-void consume(MachineState *state, const Arguments &arguments) {
-    // <slot = 0>
-    arguments.require(1);
-    size_t size;
-    void *memory = state->get_image(arguments.get_string(0)).write_to_memory(&size);
-    g_free(memory);
-}
-
-void free(MachineState *state, const Arguments &arguments) {
-    // <slot = 0>
-    arguments.require(1);
-    state->free_image(arguments.get_string(0));
-}
-
-void copy_slot(MachineState *state, const Arguments &arguments) {
-    // <source slot = 0> <dest slot = 1>
-    arguments.require(2);
-    state->set_image(arguments.get_string(0), state->get_image(arguments.get_string(1)));
-}
-
-void resolve_slot(MachineState *state, const Arguments &arguments) {
-    // <source slot = 0>
-    arguments.require(1);
-    vips_image_wio_input(state->get_image(arguments.get_string(0)).get_image());
-}
-
-void set_var(MachineState *state, const Arguments &arguments) {
-    // <var = 0> <value = 1>
-    arguments.require(2);
-
-    state->set_variable(arguments.get_string(0), arguments.get_double(1));
-}
-
-void print(MachineState *state, const Arguments &arguments) {
-    // <label = 0> <value = 1>
-    arguments.require(2);
-
-    // we use stderr her because stdout is often used for image streaming
-    std::cerr << fmt::format("@{}: {}\n", arguments.get_string(0), arguments.get_double(1));
-}
-
-void phash(MachineState *state, const Arguments &arguments) {
-    // <slot in = 0> <reduce_size = 2> <sample_size = 3> <name = 4>
-    arguments.require(4);
-
-    auto hash = pHash(
-            state->get_image(arguments.get_string(0)),
-            arguments.get_int(1),
-            arguments.get_int(2)
-    );
-
-    std::string bits(hash.size(), '0');
-    for (auto i = 0; i < hash.size(); i++) {
-        bits[i] = hash[i] ? '1' : '0';
-    }
-    std::cerr << fmt::format("@{}: {}\n", arguments.get_string(3), bits);
-}
-
-void debug(MachineState *state, const Arguments &arguments) {
-    // <enabled = 0>
-    arguments.require(1);
-
-    state->set_debug(arguments.get_bool(0));
-}
-
-#define OP(name) {#name, name}
-const std::map<std::string, image_operation> operations = {
-        OP(load),
-        OP(thumbnail),
-        OP(autorotate),
-        OP(profile),
-        OP(unsharp),
-        OP(composite),
-        OP(grid),
-        OP(embed),
-        OP(flatten),
-        OP(add_alpha),
-        OP(scale),
-        OP(affine),
-        OP(fit),
-        OP(trim_alpha),
-        OP(multiply_color),
-        OP(write),
-        OP(consume),
-        OP(free),
-        OP(copy_slot),
-        OP(resolve_slot),
-        OP(phash),
-
-        OP(set_var),
-        OP(print),
-        OP(debug),
-};
-#undef OP
-
-const Operation new_load {
-        R"(Load an image from a file or stream
+const Operation cmd_grid{
+        "grid",
+        R"(
+Generate an image by repeating an image in an arbitrary grid.
 
 Usage:
-  @load <file> <slot>)",
-        [](MachineState *state, option_map &options) {
-            auto stream = parse_stream_source(options["<file>"].asString());
-            if(stream) {
-                state->set_image(
-                        options["<slot>"].asString(),
-                        VImage::new_from_source(*stream, "")
-                );
-            } else {
-                state->set_image(
-                        options["<slot>"].asString(),
-                        VImage::new_from_file(options["<file>"].asString().c_str())
-                );
+  @grid <base_slot> <overlay_slot> <slot_out> [--origin-x=<x>] [--origin-y=<y>]
+        [--vstep-x=<x> --vstep-y=<y>] [--hstep-x=<x> --hstep-y=<y>]
+        [--blend-mode=<mode>]
+
+Options:
+  --origin-x=<x>       The X coordinate for the "0,0" image [default: 0]
+  --origin-y=<y>       The Y coordinate for the "0,0" image [default: 0]
+  --vstep-x=<x>        The X step for the "vertical" axis (defaults to 0)
+  --vstep-y=<y>        The Y step for the "vertical" axis (defaults to the overlay height)
+  --hstep-x=<x>        The X step for the "horizontal" axis (defaults to the overlay width)
+  --hstep-y=<y>        The Y step for the "horizontal" axis (defaults to 0)
+  --blend-mode=<mode>  The blend mode to use for the composite operations.
+                       (see 'vips-tool help enums') [default: over]
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            // <base slot = 0> <overlay slot = 1> <slot out = 2> <origin x = 3> <origin y = 4>
+            //   <vertical step x = 5> <vertical step y = 6> <horizontal step x = 7> <horizontal step y = 8>
+            //   <blend mode? = 9>
+
+            VipsBlendMode mode = parse_blend_mode(arguments.get_string("--blend-mode"));
+
+            auto base = state->get_image(arguments.get_string("<base_slot>"));
+            auto watermark = state->get_image(arguments.get_string("<overlay_slot>"));
+
+            vec2d origin{arguments.get_float("--origin-x"),
+                         arguments.get_float("--origin-y")};
+            vec2d vStep{arguments.get_float("--vstep-x", 0),
+                        arguments.get_float("--vstep-y", (float) watermark.height())};
+            vec2d hStep{arguments.get_float("--hstep-x", (float) watermark.width()),
+                        arguments.get_float("--hstep-y", 0)};
+            vec2d base_size{(float) base.width(), (float) base.height()};
+            vec2d item_size{(float) watermark.width(), (float) watermark.height()};
+
+            int hMin = -count_to_bound(base_size, item_size, origin, -hStep, true);
+            int hMax = count_to_bound(base_size, item_size, origin, hStep, true);
+
+            std::vector<VImage> images{base};
+            std::vector<int> modes;
+            std::vector<int> xs, ys;
+
+            for (int h = hMin; h <= hMax; h++) {
+                int vMin = -count_to_bound(base_size, item_size, origin + hStep * (float) h, -vStep, false);
+                int vMax = count_to_bound(base_size, item_size, origin + hStep * (float) h, vStep, false);
+                for (int v = vMin; v <= vMax; v++) {
+                    images.push_back(watermark);
+                    auto pos = origin + vStep * (float) v + hStep * (float) h;
+                    xs.push_back((int) pos.x);
+                    ys.push_back((int) pos.y);
+                    modes.push_back((int) mode);
+                }
             }
+
+            state->set_image(arguments.get_string("<slot_out>"), VImage::composite(
+                    images,
+                    modes,
+                    VImage::option()
+                            ->set("x", xs)
+                            ->set("y", ys)
+            ));
         }
 };
 
-const Operation new_write {
-        R"(Write an image to a file or stream
+const Operation cmd_add_alpha{
+        "add_alpha",
+        R"(
+Add an alpha channel to an image, if it doesn't already have one.
+
+Usage:
+  @add_alpha <slot_in> <slot_out> [--alpha=<n>]
+
+Options:
+  --alpha=<n>  The alpha value to use (0-255) [default: 255]
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            // <slot in = 0> <slot out = 1> <alpha = 2>
+            auto input_image = state->get_image(arguments.get_string("<slot_in>"));
+            if (input_image.bands() == 4)
+                state->set_image(arguments.get_string("<slot_out>"), input_image.copy());
+            else
+                state->set_image(arguments.get_string("<slot_out>"), input_image
+                        .bandjoin_const({arguments.get_double("--alpha")}));
+        }
+
+};
+
+const Operation cmd_multiply_color{
+        "multiply_color",
+        R"(
+Multiply the RGBA channels of an image by a constant factor
+
+Usage:
+  @multiply_color <slot_in> <slot_out> [--red=<r>] [--green=<g>] [--blue=<b>] [--alpha=<a>]
+
+Options
+  -r=<r> --red=<r>    Multiply the red channel by this value   (0-255) [default: 255]
+  -g=<g> --green=<g>  Multiply the green channel by this value (0-255) [default: 255]
+  -b=<b> --blue=<b>   Multiply the blue channel by this value  (0-255) [default: 255]
+  -a=<a> --alpha=<a>  Multiply the alpha channel by this value (0-255) [default: 255]
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            auto input_image = state->get_image(arguments.get_string("<slot_in>"));
+            state->set_image(arguments.get_string("<slot_out>"), input_image * trim_bands(input_image.bands(), {
+                    arguments.get_double("--red"),
+                    arguments.get_double("--green"),
+                    arguments.get_double("--blue"),
+                    arguments.get_double("--alpha")
+            }));
+        }
+
+};
+
+const Operation cmd_scale{
+        "scale",
+        R"(
+Scale an image
+
+Usage:
+  @scale <slot_in> <slot_out> [--horizontal=<f>] [--vertical=<f>]
+
+Options:
+  -h=<f> --horizontal=<f>  The horizontal scale factor [default: 1]
+  -v=<f> --vertical=<f>    The vertical scale factor [default: 1]
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            state->set_image(
+                    arguments.get_string("<slot_out>"),
+                    state->get_image(arguments.get_string("<slot_in>"))
+                            .resize(
+                                    arguments.get_double("--horizontal"),
+                                    VImage::option()
+                                            ->set("vscale", arguments.get_double("--vertical"))
+                            )
+            );
+        }
+};
+
+const Operation cmd_affine{
+        "affine",
+        R"(
+Apply an affine transform to an image
+
+Usage:
+  @affine <slot_in> <slot_out> <m00> <m01> <tx> <m10> <m11> <ty>
+
+The matrix is in the form
+  ⎡m00 m01 tx⎤
+  ⎢m10 m10 ty⎥
+  ⎣0   0   1 ⎦
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            auto input_image = state->get_image(arguments.get_string("<slot_in>"));
+            state->set_image(arguments.get_string("<slot_out>"), input_image.affine(
+                    {
+                            arguments.get_double("<m00>"),
+                            arguments.get_double("<m01>"),
+                            arguments.get_double("<m10>"),
+                            arguments.get_double("<m11>"),
+                    },
+                    VImage::option()
+                            ->set("odx", arguments.get_double("<tx>"))
+                            ->set("ody", arguments.get_double("<ty>"))
+            ));
+        }
+
+};
+
+const Operation cmd_fit{
+        "fit",
+        R"(
+Scale an image to fit inside a region
+
+Usage:
+  @fit <slot_in> <slot_out> [--width=<n>] [--height=<n>]
+
+Options:
+  -w=<n> --width=<n>   The width to fit the image within
+  -h=<n> --height=<n>  The height to fit the image within
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            auto input = state->get_image(arguments.get_string("<slot_in>"));
+            auto scale = -1.0;
+            if (arguments.has("--width")) {
+                scale = arguments.get_double("--width") / input.width();
+            }
+            if (arguments.has("--height")) {
+                double vscale = arguments.get_double("--height") / input.height();
+                if (scale < 0 || vscale < scale)
+                    scale = vscale;
+            }
+            if (scale < 0) {
+                state->set_image(arguments.get_string("<slot_out>"), input.copy());
+            } else {
+                state->set_image(arguments.get_string("<slot_out>"), input.resize(scale, VImage::option()));
+            }
+        }
+
+};
+
+const Operation cmd_trim_alpha{
+        "trim_alpha",
+        R"(
+Crop transparent edges from an image
+
+Usage:
+  @trim_alpha <slot_in> <slot_out> [--threshold=<n>] [--margin=<n>] [--center]
+
+Options:
+  -t=<n> --threshold=<n>  The alpha threshold to consider "opaque" (0-255) [default: 1]
+  -m=<n> --margin=<n>     The number of margin pixels to give around the opaque region. This will not add
+                          extra margin if the opaque region extends to the edge of the image. [default: 0]
+  -c --center             Maintain the image center, cropping uniformly on opposing edges
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            auto input = state->get_image(arguments.get_string("<slot_in>"));
+
+            auto alpha = input.extract_band(3);
+            int left, top, width, height;
+            left = alpha.find_trim(
+                    &top, &width, &height,
+                    VImage::option()
+                            ->set("threshold", arguments.get_double("--threshold"))
+                            ->set("background", std::vector<double>{0})
+            );
+            int right = input.width() - left - width;
+            int bottom = input.height() - top - height;
+
+            int margin = arguments.get_int("--margin");
+            left -= margin;
+            top -= margin;
+            right -= margin;
+            bottom -= margin;
+
+            if (arguments.get_bool("--center")) {
+                left = right = std::min(left, right);
+                top = bottom = std::min(top, bottom);
+            }
+
+            if (left < 0) left = 0;
+            if (top < 0) top = 0;
+            if (right < 0) right = 0;
+            if (bottom < 0) bottom = 0;
+
+            width = input.width() - left - right;
+            height = input.height() - top - bottom;
+
+            state->set_image(arguments.get_string("<slot_out>"), input.extract_area(left, top, width, height));
+        }
+};
+
+const Operation cmd_flatten{
+        "flatten",
+        R"(
+Flatten the transparency in an image
+
+Usage:
+  @flatten <slot_in> <slot_out> [--red=<r>] [--green=<g>] [--blue=<b>]
+
+Options:
+  -r=<r> --red=<r>    The red channel to use as the background   (0-255) [default: 0]
+  -g=<g> --green=<g>  The green channel to use as the background (0-255) [default: 0]
+  -b=<b> --blue=<b>   The blue channel to use as the background  (0-255) [default: 0]
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            state->set_image(arguments.get_string("<slot_out>"),
+                             state->get_image(arguments.get_string("<slot_in>")).flatten(
+                                     VImage::option()
+                                             ->set("background", std::vector<double>{
+                                                     arguments.get_double("--red"),
+                                                     arguments.get_double("--green"),
+                                                     arguments.get_double("--blue")
+                                             })
+                             ));
+        }
+};
+
+const Operation cmd_write{
+        "write",
+        R"(
+Write an image to a file or stream
 
 Usage:
   @write <slot> <file> [--stream-format=<fmt>]
 
 Options:
   -f <fmt> --stream-format=<fmt>  Specify the stream format (e.g. '.jpeg', '.png', '.webp').
-                                  (Required for stdout and FIFO streams.))",
-        [](MachineState *state, option_map &options) {
-            auto stream = parse_stream_target(options["<file>"].asString());
-            if(stream) {
-                if(!options["--stream-format"].isString()) {
+                                  (Required for stdout and FIFO streams.)
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            auto stream = parse_stream_target(arguments.get_string("<file>"));
+            if (stream) {
+                if (!arguments.has("--stream-format")) {
                     throw std::runtime_error("Writing to a stream requires --stream-format");
                 }
 
-                state->get_image(options["<slot>"].asString()).write_to_target(
-                        options["--stream-format"].asString().c_str(),
+                state->get_image(arguments.get_string("<slot>")).write_to_target(
+                        arguments.get_string("--stream-format").c_str(),
                         *stream
                 );
             } else {
-                state->get_image(options["<slot>"].asString()).write_to_file(
-                        options["<file>"].asString().c_str()
+                state->get_image(arguments.get_string("<slot>")).write_to_file(
+                        arguments.get_string("<file>").c_str()
                 );
             }
         }
 };
 
-#define OP(name) {#name, &name}
-const std::map<std::string, const Operation *> new_operations = {
-        OP(new_load),
-        OP(new_write),
+const Operation cmd_consume{
+        "consume",
+        R"(
+Consumes an image, resolving and then discarding all the pixels. Useful mostly for testing.
+
+Usage:
+  @consume <slot>
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            size_t size;
+            void *memory = state->get_image(arguments.get_string("<slot>")).write_to_memory(&size);
+            g_free(memory);
+        }
+
+};
+
+const Operation cmd_free{
+        "free",
+        R"(
+Free the image in a slot
+
+Usage:
+  @free <slot>
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            state->free_image(arguments.get_string("<slot>"));
+        }
+
+};
+
+const Operation cmd_copy{
+        "copy",
+        R"(
+Copy the image from one slot into another slot
+
+Usage:
+  @copy <source_slot> <dest_slot>
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            state->set_image(
+                    arguments.get_string("<dest_slot>"),
+                    state->get_image(arguments.get_string("<source_slot>"))
+            );
+        }
+
+};
+
+const Operation cmd_resolve{
+        "resolve",
+        R"(
+Resolve a slot into memory. This is useful for accessing a sequential-only image (e.g. jpeg read) multiple times, which
+otherwise would crash.
+
+Usage:
+  @resolve <slot>
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            vips_image_wio_input(state->get_image(arguments.get_string("<slot>")).get_image());
+        }
+};
+
+const Operation cmd_set_var{
+        "set_var",
+        R"(
+Set a variable to a value
+
+Usage:
+  @set_var <var> <value>
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            state->set_variable(arguments.get_string("<var>"), arguments.get_double("<value>"));
+        }
+};
+
+const Operation cmd_print{
+        "print",
+        R"(
+Print a value
+
+Usage:
+  @print <label> <value>
+
+The output will be sent to stderr in the form '@<name>: <value>\n'.
+stderr is used because stdout may be used for image streaming.
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            fmt::print(stderr, "@{}: {}\n", arguments.get_string("<label>"), arguments.get_double("<value>"));
+        }
+};
+
+const Operation cmd_phash{
+        "phash",
+        R"(
+Compute the perceptual hash of an image
+
+Usage:
+  @phash <slot> --reduce=<n> --sample=<n> [--label=<label>]
+
+Options:
+  -r=<n> --reduce=<n>         The size to reduce the image to before computing the DCT
+  -s=<n> --sample=<n>         The size to sample from the DCT image. The output will be n^2 bits.
+  -l=<label> --label=<label>  The label to use. Defaults to the slot name.
+
+The output will be sent to stderr in the form '@<label>: <bit string>\n'.
+stderr is used because stdout may be used for image streaming.
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            auto slot = arguments.get_string("<slot>");
+
+            auto hash = pHash(
+                    state->get_image(slot),
+                    arguments.get_int("--reduce"),
+                    arguments.get_int("--sample")
+            );
+
+            std::string bits(hash.size(), '0');
+            for (auto i = 0; i < hash.size(); i++) {
+                bits[i] = hash[i] ? '1' : '0';
+            }
+            fmt::print(stderr, "@{}: {}\n", arguments.get_string("--label", slot), bits);
+        }
+};
+
+#define OP(op) {op.name, &op}
+const std::map<std::string, const Operation *> operations = {
+        OP(cmd_load),
+        OP(cmd_thumbnail),
+        OP(cmd_write),
+        OP(cmd_phash),
+        OP(cmd_profile),
+        OP(cmd_unsharp),
+        OP(cmd_autorotate),
+        OP(cmd_flatten),
+        OP(cmd_add_alpha),
+        OP(cmd_scale),
+        OP(cmd_affine),
+        OP(cmd_fit),
+        OP(cmd_multiply_color),
+        OP(cmd_grid),
+        OP(cmd_trim_alpha),
+        OP(cmd_composite),
+        OP(cmd_consume),
+        OP(cmd_free),
+        OP(cmd_copy),
+        OP(cmd_resolve),
+        OP(cmd_set_var),
+        OP(cmd_print),
 };
 #undef OP
 
-image_operation get_operation(const std::string &name) {
-    return operations.at(name);
-}
-
-const Operation *get_new_operation(const std::string &name) {
-    auto operation = new_operations.find(name);
-    if(operation == new_operations.end()) {
+const Operation *get_operation(const std::string &name) {
+    auto operation = operations.find(name);
+    if (operation == operations.end()) {
         return nullptr;
     } else {
         return operation->second;
     }
 }
 
-struct ImageFunction : public double_function
-{
+struct ImageFunction : public double_function {
     typedef double (*callback_t)(const vips::VImage &);
+
     MachineState *state;
     callback_t callback;
 
-    ImageFunction(MachineState *state, callback_t callback) : state(state), callback(callback), double_function("S"){}
+    ImageFunction(MachineState *state, callback_t callback) : state(state), callback(callback), double_function("S") {}
 
     inline double operator()(double_function::parameter_list_t parameters) override {
         double_string_t name_view(parameters[0]);
@@ -629,8 +788,8 @@ struct ImageFunction : public double_function
 };
 
 void initialize_functions(MachineState *state) {
-    state->add_function("vips_width", new ImageFunction(state, [](auto image) { return (double)image.width(); }));
-    state->add_function("vips_height", new ImageFunction(state, [](auto image) { return (double)image.height(); }));
+    state->add_function("vips_width", new ImageFunction(state, [](auto image) { return (double) image.width(); }));
+    state->add_function("vips_height", new ImageFunction(state, [](auto image) { return (double) image.height(); }));
 }
 
 

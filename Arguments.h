@@ -7,27 +7,30 @@
 
 #include <string>
 #include <vector>
+#include <docopt.h>
 #include "MachineState.h"
 
+typedef std::map<std::string, docopt::value> docopt_map;
+
 class Arguments {
-    std::vector<std::string> arguments;
+    docopt_map arguments;
     MachineState *state;
 public:
     const int index;
-    const std::string name;
+    const std::string operation;
 
-    explicit Arguments(int index, std::string name, std::vector<std::string> arguments, MachineState *state);
+    explicit Arguments(int index, std::string operation, docopt_map arguments, MachineState *state);
 
-    void require(size_t count) const;
-    [[nodiscard]] size_t size() const;
-    [[nodiscard]] bool has(size_t index) const;
-    [[nodiscard]] const std::string& get_string(size_t index) const;
-    [[nodiscard]] bool get_bool(size_t index) const;
-    [[nodiscard]] int get_int(size_t index) const;
-    [[nodiscard]] float get_float(size_t index) const;
-    [[nodiscard]] double get_double(size_t index) const;
-
-    [[nodiscard]] const std::vector<std::string> &get_arguments() const;
+    [[nodiscard]] bool has(const std::string &name) const;
+    [[nodiscard]] const std::string &get_string(const std::string &name) const;
+    [[nodiscard]] const std::string &get_string(const std::string &name, const std::string &def) const;
+    [[nodiscard]] bool get_bool(const std::string &name) const;
+    [[nodiscard]] int get_int(const std::string &name) const;
+    [[nodiscard]] int get_int(const std::string &name, int def) const;
+    [[nodiscard]] float get_float(const std::string &name) const;
+    [[nodiscard]] float get_float(const std::string &name, float def) const;
+    [[nodiscard]] double get_double(const std::string &name) const;
+    [[nodiscard]] double get_double(const std::string &name, double def) const;
 };
 
 
