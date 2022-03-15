@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
             USAGE,
             {argv + 1, argv + first_operation},
             true,
-            "VIPS tool 1.1"
+            "VIPS tool 2.0"
     );
 
     if(main_docs["help"].asBool()) {
