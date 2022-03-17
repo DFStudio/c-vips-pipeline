@@ -5,6 +5,8 @@
 #ifndef VIPS_TOOL_HELP_PAGES_H
 #define VIPS_TOOL_HELP_PAGES_H
 
+#include <string>
+
 const char HELP_LIST[] =
         R"(# Special pages
     slots        Information about image slots
@@ -54,5 +56,56 @@ Blend modes:
   dest_atop, xor, add, saturate, multiply, screen, overlay, darken, lighten,
   colour_dodge, colour_burn, hard_light, soft_light, difference, exclusion
 )";
+
+const char HELP_EXPRESSIONS[] =
+        R"~(# Expressions
+
+Any numeric parameter can use an ExprTk expression to compute its value
+dynamically. (see https://www.partow.net/programming/exprtk/index.html)
+
+To evaluate a parameter as an expression, prefix the parameter with a '%'.
+This is most helpful when used in conjunction with the '@set_var' operation
+and vips-tool's own functions (listed below).
+
+# Functions
+  vips_width('<slot>')  - returns the width of the image in the given slot
+  vips_height('<slot>') - returns the height of the image in the given slot
+
+# Examples
+
+Scaling a watermark to fit an image:
+    @set_var scale 0.6
+    @load file.jpg base
+    @thumbnail watermark.png watermark
+        "%vips_width('base') * scale"
+        "%vips_height('base') * scale"
+
+Centering a watermark:
+    @composite image watermark out
+        "%(vips_width('image') - vips_width('watermark'))/2"
+        "%(vips_height('image') - vips_height('watermark'))/2"
+
+Rotating an image:
+    @set_var rads 0.52
+    @affine image rotated
+        "%cos(rads)" "%-sin(rads)" "0"
+        "%sin(rads)" "%cos(rads)"  "0"
+)~";
+
+const char HELP_SLOTS[] =
+        R"(# Slots
+
+Images are passed around using named "slots". Most operations that transform an
+image don't actually perform computation, instead they create an image that
+performs the computation when required (e.g. when writing the image to a file).
+It's valid to use an image and put the result back in the same slot.
+)";
+
+const char *get_help_page(const std::string &name) {
+    return name == "list" ? HELP_LIST :
+           name == "enums" ? HELP_ENUMS :
+           name == "expressions" ? HELP_EXPRESSIONS :
+           name == "slots" ? HELP_SLOTS : nullptr;
+}
 
 #endif //VIPS_TOOL_HELP_PAGES_H

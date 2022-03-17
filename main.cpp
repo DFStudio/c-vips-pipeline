@@ -54,17 +54,15 @@ int main(int argc, char **argv) {
             USAGE,
             {argv + 1, argv + first_operation},
             true,
-            "VIPS tool 2.0"
+            "vips-tool 2.0"
     );
 
     if(main_docs["help"].asBool()) {
         if(main_docs["<page>"].isString()) {
             auto page = main_docs["<page>"].asString();
-            if(page == "list") {
-                print("{}", HELP_LIST);
-                exit(0);
-            } else if(page == "enums") {
-                print("{}", HELP_ENUMS);
+            auto special_page = get_help_page(page);
+            if(special_page != nullptr) {
+                print("{}", special_page);
                 exit(0);
             } else {
                 auto operation = get_operation(page);
