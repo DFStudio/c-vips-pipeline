@@ -696,7 +696,7 @@ Options:
   -s <n> --sample=<n>         The size to sample from the DCT image. The output will be n^2 bits.
   -l <label> --label=<label>  The label to use. Defaults to the slot name.
 
-The output will be sent to stderr in the form '@<label>: <bit string>\n'.
+The output will be sent to stderr in the form '@<label>: <version>:<bit string>'.
 stderr is used because stdout may be used for image streaming.
 )",
         [](MachineState *state, const Arguments &arguments) {
@@ -708,11 +708,11 @@ stderr is used because stdout may be used for image streaming.
                     arguments.get_int("--sample")
             );
 
-            std::string bits(hash.size(), '0');
-            for (auto i = 0; i < hash.size(); i++) {
-                bits[i] = hash[i] ? '1' : '0';
+            std::string bitString(hash.bits.size(), '0');
+            for (auto i = 0; i < hash.bits.size(); i++) {
+                bitString[i] = hash.bits[i] ? '1' : '0';
             }
-            fmt::print(stderr, "@{}: {}\n", arguments.get_string("--label", slot), bits);
+            fmt::print(stderr, "@{}: {}:{}\n", arguments.get_string("--label", slot), hash.version, bitString);
         }
 };
 

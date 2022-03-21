@@ -9,6 +9,11 @@
 #include <vips/vips.h>
 #include <vips/vips8>
 
-std::vector<bool> pHash(const vips::VImage &image, int reduce_size, int sample_size);
+struct PerceptualHash {
+    int version;
+    std::vector<bool> bits;
+};
+
+PerceptualHash pHash(const vips::VImage &image, int reduce_size, int sample_size);
 
 #endif //VIPS_TOOL_PHASH_H

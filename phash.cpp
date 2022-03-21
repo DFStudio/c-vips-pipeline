@@ -8,7 +8,7 @@
 
 // based on https://github.com/jenssegers/imagehash/blob/eab0081/src/Implementations/PerceptualHash.php
 
-std::vector<bool> pHash(const vips::VImage &image, int reduce_size, int sample_size) {
+PerceptualHash pHash(const vips::VImage &image, int reduce_size, int sample_size) {
     auto resized = image
             .colourspace(VIPS_INTERPRETATION_B_W)
             .extract_band(0)
@@ -38,5 +38,5 @@ std::vector<bool> pHash(const vips::VImage &image, int reduce_size, int sample_s
     g_object_unref(region);
     g_free(pixels);
 
-    return bits;
+    return { 1, bits };
 }
