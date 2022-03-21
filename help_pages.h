@@ -34,6 +34,7 @@ transforming images:
     multiply_color  Multiply the RGBA channels of an image by a constant factor
 generating images:
     trim_alpha      Crop transparent edges from an image
+    create_image    Create a blank image with a flat background color
 compositing images:
     grid            Composite by repeating an image in an arbitrary grid
     composite       Composite two images
@@ -70,6 +71,7 @@ and vips-tool's own functions (listed below).
 # Functions
   vips_width('<slot>')  - returns the width of the image in the given slot
   vips_height('<slot>') - returns the height of the image in the given slot
+  vips_bands('<slot>')  - returns the number of bands (channels) in the image
 
 # Examples
 

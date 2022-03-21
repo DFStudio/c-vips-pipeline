@@ -536,6 +536,34 @@ Options:
         }
 };
 
+const Operation cmd_create_image{
+        "create_image",
+        R"(
+Create an image with a flat background color.
+
+Usage:
+  @create_image <slot_out> <width> <height> <r> <g> <b> [--alpha=<a>]
+
+Options:
+  -a <a> --alpha=<a>  The optional alpha channel to use for the background (0-255)
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            std::vector<double> pixel{
+                    arguments.get_double("<r>"),
+                    arguments.get_double("<g>"),
+                    arguments.get_double("<b>")
+            };
+            if(arguments.has("--alpha")) {
+                pixel.push_back(arguments.get_double("--alpha"));
+            }
+            state->set_image(arguments.get_string("<slot_out>"),
+                             VImage::black(arguments.get_int("<width>"), arguments.get_int("<height>"))
+                                     .new_from_image(pixel)
+                                     .copy(VImage::option()->set("interpretation", VIPS_INTERPRETATION_sRGB))
+            );
+        }
+};
+
 const Operation cmd_flatten{
         "flatten",
         R"(
@@ -725,6 +753,7 @@ const std::map<std::string, const Operation *> operations = {
         OP(cmd_profile),
         OP(cmd_unsharp),
         OP(cmd_autorotate),
+        OP(cmd_create_image),
         OP(cmd_flatten),
         OP(cmd_add_alpha),
         OP(cmd_scale),
@@ -754,7 +783,7 @@ const Operation *get_operation(const std::string &name) {
 }
 
 struct ImageFunction : public double_function {
-    typedef double (*callback_t)(const vips::VImage &);
+    typedef double (*callback_t)(const VImage &);
 
     MachineState *state;
     callback_t callback;
@@ -772,6 +801,7 @@ struct ImageFunction : public double_function {
 void initialize_functions(MachineState *state) {
     state->add_function("vips_width", new ImageFunction(state, [](auto image) { return (double) image.width(); }));
     state->add_function("vips_height", new ImageFunction(state, [](auto image) { return (double) image.height(); }));
+    state->add_function("vips_bands", new ImageFunction(state, [](auto image) { return (double) image.bands(); }));
 }
 
 
