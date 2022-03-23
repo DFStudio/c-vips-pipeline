@@ -21,6 +21,18 @@ std::vector<double> trim_bands(int bands, std::vector<double> components) {
     return out;
 }
 
+VipsInteresting parse_interest(const std::string &arg) {
+    if (arg == "none") return VIPS_INTERESTING_NONE;
+    if (arg == "centre") return VIPS_INTERESTING_CENTRE;
+    if (arg == "center") return VIPS_INTERESTING_CENTRE;
+    if (arg == "entropy") return VIPS_INTERESTING_ENTROPY;
+    if (arg == "attention") return VIPS_INTERESTING_ATTENTION;
+    if (arg == "low") return VIPS_INTERESTING_LOW;
+    if (arg == "high") return VIPS_INTERESTING_HIGH;
+    if (arg == "all") return VIPS_INTERESTING_ALL;
+    throw std::invalid_argument(fmt::format("Unrecognized interest '{}'", arg));
+}
+
 VipsIntent parse_intent(const std::string &arg) {
     if (arg == "perceptual") return VIPS_INTENT_PERCEPTUAL;
     if (arg == "relative") return VIPS_INTENT_RELATIVE;
@@ -110,14 +122,13 @@ Options:
             );
         }
 };
-
 const Operation cmd_thumbnail{
         "thumbnail",
         R"(
 Create a thumbnail from a file or stream
 
 Usage:
-  @thumbnail <file> <slot> <width> [<height>] [--no-rotate] [--intent=<intent>] [--sizing=<sizing>]
+  @thumbnail <file> <slot> <width> [<height>] [--no-rotate] [--intent=<intent>] [--sizing=<sizing>] [--crop=<crop>]
 
 Options:
   --no-rotate  Don't automatically flatten rotation metadata
@@ -125,15 +136,21 @@ Options:
                      'relative', 'saturation', 'absolute'. [default: relative]
   --sizing=<sizing>  The VIPS sizing type. One of 'both', 'up', 'down', 'force'.
                      [default: down]
+  --crop=<crop>      Scale to fill, rather than fit, using the given VIPS
+                     "interest" strategy. One of 'none', 'centre', 'entropy',
+                     'attention', 'low', 'high'. If set to a non-'none' value
+                     both <width> and <height> must be specified. [default: none]
 )",
         [](MachineState *state, const Arguments &arguments) {
             VipsIntent intent = parse_intent(arguments.get_string("--intent"));
+            VipsInteresting crop = parse_interest(arguments.get_string("--crop"));
 
             VipsSize size = parse_size(arguments.get_string("--sizing"));
 
             VOption *voptions = VImage::option()
                     ->set("no_rotate", arguments.get_bool("--no-rotate"))
                     ->set("intent", intent)
+                    ->set("crop", crop)
                     ->set("size", size);
             if (arguments.has("<height>"))
                 voptions->set("height", arguments.get_int("<height>"));
