@@ -741,23 +741,31 @@ Options:
   -s <n> --sample=<n>         The size to sample from the DCT image. The output will be n^2 bits.
   -l <label> --label=<label>  The label to use. Defaults to the slot name.
 
-The output will be sent to stderr in the form '@<label>: <version>:<bit string>'.
+The output will be sent to stderr in the form:
+  '@<label>: <version>:<reduce size>:<sample size>:<bit string>'
 stderr is used because stdout may be used for image streaming.
 )",
         [](MachineState *state, const Arguments &arguments) {
             auto slot = arguments.get_string("<slot>");
 
+            auto reduce = arguments.get_int("--reduce");
+            auto sample = arguments.get_int("--sample");
             auto hash = pHash(
                     state->get_image(slot),
-                    arguments.get_int("--reduce"),
-                    arguments.get_int("--sample")
+                    reduce,
+                    sample
             );
 
             std::string bitString(hash.bits.size(), '0');
             for (auto i = 0; i < hash.bits.size(); i++) {
                 bitString[i] = hash.bits[i] ? '1' : '0';
             }
-            fmt::print(stderr, "@{}: {}:{}\n", arguments.get_string("--label", slot), hash.version, bitString);
+            fmt::print(
+                    stderr, "@{}: {}:{}:{}:{}\n",
+                    arguments.get_string("--label", slot),
+                    hash.version, reduce, sample,
+                    bitString
+            );
         }
 };
 
