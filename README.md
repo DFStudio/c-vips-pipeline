@@ -18,7 +18,7 @@ dramatically.
 
 ### Dependencies - MacOS
 ```
-brew install vips cmake
+brew install vips cmake pkg-config
 ```
 
 ### Dependencies - Ubuntu
