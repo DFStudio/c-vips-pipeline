@@ -56,6 +56,9 @@ Blend modes:
   clear, source, over, in, out, atop, dest, dest_over, dest_in, dest_out,
   dest_atop, xor, add, saturate, multiply, screen, overlay, darken, lighten,
   colour_dodge, colour_burn, hard_light, soft_light, difference, exclusion
+
+Metadata types:
+  int, double, string,
 )";
 
 const char HELP_EXPRESSIONS[] =

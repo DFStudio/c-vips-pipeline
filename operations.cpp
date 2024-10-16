@@ -607,6 +607,33 @@ Options:
         }
 };
 
+const Operation cmd_set_metadata{
+        "set_metadata",
+        R"(
+Set metadata on the image
+
+Usage:
+  @set_metadata <slot> <name> <value> <type>
+
+Options:
+  <type>  The metadata type
+          (see 'vips-tool help enums')
+)",
+        [](MachineState *state, const Arguments &arguments) {
+            auto image = state->get_image(arguments.get_string("<slot>"));
+            auto type = arguments.get_string("<type>");
+            if (type == "int") {
+                image.set(arguments.get_string("<name>").c_str(), arguments.get_int("<value>"));
+            } else if (type == "double") {
+                image.set(arguments.get_string("<name>").c_str(), arguments.get_double("<value>"));
+            } else if (type == "string") {
+                image.set(arguments.get_string("<name>").c_str(), arguments.get_string("<value>").c_str());
+            } else {
+                throw std::invalid_argument(fmt::format("Unrecognized metadata type '{}'", type));
+            }
+        }
+};
+
 const Operation cmd_write{
         "write",
         R"(
@@ -788,6 +815,7 @@ const std::map<std::string, const Operation *> operations = {
         OP(cmd_grid),
         OP(cmd_trim_alpha),
         OP(cmd_composite),
+        OP(cmd_set_metadata),
         OP(cmd_consume),
         OP(cmd_free),
         OP(cmd_copy),
